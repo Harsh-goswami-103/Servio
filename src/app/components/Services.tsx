@@ -1,8 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
 import { FileText, Globe, Briefcase, ShoppingCart, Code, Settings } from 'lucide-react';
-import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
-import { FileText, Globe, Briefcase, ShoppingCart, Code, Settings } from 'lucide-react';
 
 const services = [
   {
@@ -174,8 +172,6 @@ export function Services() {
   const lineScale = useTransform(scrollYProgress, [0.05, 0.22], [0, 1]);
 
   return (
-    <section id="services" className="py-20 md:py-32 bg-white dark:bg-slate-950">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <section
       ref={ref}
       id="services"
@@ -253,49 +249,6 @@ export function Services() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, index) => (
-            <motion.div
-              key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="group relative bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-gray-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-700 hover:shadow-xl dark:hover:shadow-indigo-900/20 transition-all duration-300 cursor-pointer"
-            >
-              {/* Gradient overlay on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-              <div className="relative z-10">
-                <div className={`w-14 h-14 bg-gradient-to-br ${service.color} rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                  <service.icon className="w-7 h-7 text-white" />
-                </div>
-
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                  {service.title}
-                </h3>
-
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  {service.description}
-                </p>
-
-                <div className="mt-6 flex items-center text-indigo-600 dark:text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <span className="text-sm">Learn more</span>
-                  <svg
-                    className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </motion.div>
             <ServiceCard key={service.title} service={service} index={index} reduce={reduce} />
           ))}
         </div>

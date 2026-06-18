@@ -1,37 +1,43 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Send, CheckCircle2 } from "lucide-react";
+import {
+  BUDGET_OPTIONS as budgetOptions,
+  WEBSITE_TYPES as websiteTypes,
+  LIMITS,
+  evaluateSubmission,
+  type FieldErrors,
+  type QuoteFormData,
+} from "../lib/quoteValidation";
 
-const budgetOptions = [
-  "Under $1,000",
-  "$1,000 – $2,500",
-  "$2,500 – $5,000",
-  "$5,000 – $10,000",
-  "$10,000+",
-];
+// Persisted submission timestamps for client-side rate limiting. Advisory only
+// (a user can clear storage) — the heavy lifting belongs on a server, but this
+// stops casual repeat-spam from the same browser at zero infra cost.
+const RATE_KEY = "servio:quote:submissions";
 
-const websiteTypes = [
-  "Landing Page",
-  "Business Website",
-  "Portfolio Website",
-  "E-Commerce Store",
-  "Custom Web Application",
-  "Website Redesign",
-];
+function readHistory(): number[] {
+  try {
+    const raw = localStorage.getItem(RATE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter((n) => typeof n === "number") : [];
+  } catch {
+    return []; // storage disabled / private mode → fail open
+  }
+}
 
-type FormData = {
-  name: string;
-  email: string;
-  business: string;
-  budget: string;
-  type: string;
-  description: string;
-};
+function writeHistory(history: number[]): void {
+  try {
+    localStorage.setItem(RATE_KEY, JSON.stringify(history));
+  } catch {
+    /* storage unavailable — nothing to persist, not worth surfacing */
+  }
+}
 
 export function QuoteForm() {
-  const [form, setForm] = useState<FormData>({
+  const [form, setForm] = useState<QuoteFormData>({
     name: "",
     email: "",
+    phone: "",
     business: "",
     budget: "",
     type: "",
@@ -39,34 +45,78 @@ export function QuoteForm() {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  // Bumped on every surfaced form error so the live region re-announces even
+  // when the message text is identical to the previous one (e.g. blocked twice).
+  const [errorNonce, setErrorNonce] = useState(0);
 
-  const validate = () => {
-    const errs: Partial<FormData> = {};
-    if (!form.name.trim()) errs.name = "Name is required";
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      errs.email = "Valid email is required";
-    if (!form.business.trim()) errs.business = "Business name is required";
-    if (!form.budget) errs.budget = "Please select a budget";
-    if (!form.type) errs.type = "Please select a website type";
-    return errs;
+  // Honeypot value lives outside React state (read on submit via ref) so it
+  // never round-trips through the controlled inputs a human interacts with.
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  // Timestamp of first render — the start of the timing trap. Lazily computed
+  // once so it survives re-renders without re-stamping.
+  const [mountedAt] = useState(() => Date.now());
+
+  const showFormError = (message: string) => {
+    setFormError(message);
+    setErrorNonce((n) => n + 1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setFormError(null);
+
+    const now = Date.now();
+    const verdict = evaluateSubmission(form, {
+      honeypot: honeypotRef.current?.value ?? "",
+      elapsedMs: now - mountedAt,
+      now,
+      history: readHistory(),
+    });
+
+    if (verdict.status === "invalid") {
+      setErrors(verdict.errors);
+      // Move focus to the first invalid control so keyboard/AT users land on it.
+      const firstKey = Object.keys(verdict.errors)[0];
+      if (firstKey) document.getElementById(`quote-${firstKey}`)?.focus();
+      return;
+    }
+
     setErrors({});
+
+    if (verdict.status === "blocked") {
+      // Silent traps (honeypot / impossibly-fast fill): mimic the success state
+      // so automated submitters get zero signal that they were caught.
+      if (verdict.silent) {
+        setSubmitted(true);
+        return;
+      }
+      // A spam block still consumes a rate-limit slot (carried as nextHistory);
+      // rate_limit blocks carry none. Persist before surfacing the message.
+      if (verdict.nextHistory) writeHistory(verdict.nextHistory);
+      showFormError(verdict.message ?? "Unable to submit right now. Please try again.");
+      return;
+    }
+
+    // verdict.status === "ok" — record this submission, then "send".
+    writeHistory(verdict.nextHistory);
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1500));
     setLoading(false);
     setSubmitted(true);
   };
 
-  const inputClass = (field: keyof FormData) =>
+  const inputClass = (field: keyof QuoteFormData) =>
     `w-full px-4 py-3 bg-white/10 backdrop-blur-sm border rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 ${
       errors[field] ? "border-red-400/60" : "border-white/20 hover:border-white/30"
     }`;
+
+  // Shared aria wiring for a field: marks it invalid and points at its error text.
+  const fieldAria = (field: keyof QuoteFormData) => ({
+    "aria-invalid": errors[field] ? true : undefined,
+    "aria-describedby": errors[field] ? `quote-${field}-error` : undefined,
+  });
 
   return (
     <section id="contact" className="py-20 md:py-32 bg-gradient-to-br from-[#0f0f1a] via-[#1a0a2e] to-[#0f0f1a] relative overflow-hidden">
@@ -119,80 +169,135 @@ export function QuoteForm() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
+              {/* Honeypot: hidden from humans (display:none keeps it out of the
+                  a11y tree and away from autofill) but present in the DOM, so a
+                  form-filling bot trips it. Neutral name = no autofill category.
+                  Do not remove. */}
+              <div className="hidden" aria-hidden="true">
+                <label htmlFor="referral_source">Leave this field empty</label>
+                <input
+                  ref={honeypotRef}
+                  type="text"
+                  id="referral_source"
+                  name="referral_source"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  defaultValue=""
+                />
+              </div>
+
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="quote-name" className="block text-sm font-medium text-gray-300 mb-2">
                     Full Name <span className="text-indigo-400">*</span>
                   </label>
                   <input
+                    id="quote-name"
                     type="text"
+                    autoComplete="name"
                     placeholder="Sarah Chen"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className={inputClass("name")}
+                    {...fieldAria("name")}
                   />
-                  {errors.name && <p className="mt-1.5 text-red-400 text-xs">{errors.name}</p>}
+                  {errors.name && <p id="quote-name-error" className="mt-1.5 text-red-400 text-xs">{errors.name}</p>}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="quote-email" className="block text-sm font-medium text-gray-300 mb-2">
                     Email Address <span className="text-indigo-400">*</span>
                   </label>
                   <input
+                    id="quote-email"
                     type="email"
+                    autoComplete="email"
                     placeholder="sarah@company.com"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className={inputClass("email")}
+                    {...fieldAria("email")}
                   />
-                  {errors.email && <p className="mt-1.5 text-red-400 text-xs">{errors.email}</p>}
+                  {errors.email && <p id="quote-email-error" className="mt-1.5 text-red-400 text-xs">{errors.email}</p>}
+                </div>
+
+                {/* Phone (optional) */}
+                <div>
+                  <label htmlFor="quote-phone" className="block text-sm font-medium text-gray-300 mb-2">
+                    Phone Number <span className="text-gray-500">(optional)</span>
+                  </label>
+                  <input
+                    id="quote-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+1 555 123 4567"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className={inputClass("phone")}
+                    {...fieldAria("phone")}
+                  />
+                  {errors.phone && <p id="quote-phone-error" className="mt-1.5 text-red-400 text-xs">{errors.phone}</p>}
                 </div>
 
                 {/* Business */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="quote-business" className="block text-sm font-medium text-gray-300 mb-2">
                     Business Name <span className="text-indigo-400">*</span>
                   </label>
                   <input
+                    id="quote-business"
                     type="text"
+                    autoComplete="organization"
                     placeholder="Acme Corp"
                     value={form.business}
                     onChange={(e) => setForm({ ...form, business: e.target.value })}
                     className={inputClass("business")}
+                    {...fieldAria("business")}
                   />
-                  {errors.business && <p className="mt-1.5 text-red-400 text-xs">{errors.business}</p>}
+                  {errors.business && <p id="quote-business-error" className="mt-1.5 text-red-400 text-xs">{errors.business}</p>}
                 </div>
 
                 {/* Budget */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="quote-budget" className="block text-sm font-medium text-gray-300 mb-2">
                     Budget Range <span className="text-indigo-400">*</span>
                   </label>
                   <select
+                    id="quote-budget"
                     value={form.budget}
                     onChange={(e) => setForm({ ...form, budget: e.target.value })}
                     className={`${inputClass("budget")} appearance-none bg-[#1a1040]`}
+                    {...fieldAria("budget")}
                   >
                     <option value="" disabled>Select budget</option>
                     {budgetOptions.map((b) => (
                       <option key={b} value={b} className="bg-[#1a1040]">{b}</option>
                     ))}
                   </select>
-                  {errors.budget && <p className="mt-1.5 text-red-400 text-xs">{errors.budget}</p>}
+                  {errors.budget && <p id="quote-budget-error" className="mt-1.5 text-red-400 text-xs">{errors.budget}</p>}
                 </div>
 
                 {/* Website Type */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <span id="quote-type-label" className="block text-sm font-medium text-gray-300 mb-2">
                     Website Type <span className="text-indigo-400">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  </span>
+                  <div
+                    id="quote-type"
+                    role="group"
+                    aria-labelledby="quote-type-label"
+                    aria-describedby={errors.type ? "quote-type-error" : undefined}
+                    tabIndex={-1}
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3 outline-none"
+                  >
                     {websiteTypes.map((type) => (
                       <button
                         key={type}
                         type="button"
+                        aria-pressed={form.type === type}
                         onClick={() => setForm({ ...form, type })}
                         className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${
                           form.type === type
@@ -204,22 +309,44 @@ export function QuoteForm() {
                       </button>
                     ))}
                   </div>
-                  {errors.type && <p className="mt-1.5 text-red-400 text-xs">{errors.type}</p>}
+                  {errors.type && <p id="quote-type-error" className="mt-1.5 text-red-400 text-xs">{errors.type}</p>}
                 </div>
 
                 {/* Description */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Project Description
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="quote-description" className="block text-sm font-medium text-gray-300">
+                      Project Description
+                    </label>
+                    <span
+                      className={`text-xs ${
+                        form.description.length > LIMITS.description[1] ? "text-red-400" : "text-gray-500"
+                      }`}
+                    >
+                      {form.description.length}/{LIMITS.description[1]}
+                    </span>
+                  </div>
                   <textarea
+                    id="quote-description"
                     rows={4}
                     placeholder="Tell us about your project goals, timeline, and any specific requirements..."
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/30 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 resize-none"
+                    {...fieldAria("description")}
                   />
+                  {errors.description && <p id="quote-description-error" className="mt-1.5 text-red-400 text-xs">{errors.description}</p>}
                 </div>
+              </div>
+
+              {/* Persistent live region: always mounted so the first message is
+                  announced, and re-keyed per error so identical repeats re-fire. */}
+              <div aria-live="assertive">
+                {formError && (
+                  <p key={errorNonce} className="mt-6 text-center text-red-400 text-sm" role="alert">
+                    {formError}
+                  </p>
+                )}
               </div>
 
               <div className="mt-8">
