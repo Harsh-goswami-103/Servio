@@ -1,4 +1,6 @@
-import React, { useRef, type MouseEvent } from 'react';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
+import { FileText, Globe, Briefcase, ShoppingCart, Code, Settings } from 'lucide-react';
 import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
 import { FileText, Globe, Briefcase, ShoppingCart, Code, Settings } from 'lucide-react';
 
@@ -70,7 +72,7 @@ function ServiceCard({
   const Icon = service.icon;
 
   // Cursor-tracked spotlight via CSS vars — paint-only, off the React render path.
-  const onMove = (e: MouseEvent<HTMLDivElement>) => {
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (reduce) return;
     const r = e.currentTarget.getBoundingClientRect();
     e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
