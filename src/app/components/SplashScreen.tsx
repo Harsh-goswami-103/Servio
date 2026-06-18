@@ -196,6 +196,16 @@ export function SplashScreen({
         </CanvasErrorBoundary>
       )}
 
+      {/* Cinematic vignette for depth (above the WebGL layer, below the card). */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%)",
+        }}
+      />
+
       <motion.div
         variants={cardVariants}
         className="relative z-10 flex w-full max-w-sm flex-col items-center gap-5 rounded-3xl border border-white/10 bg-white/5 px-6 py-9 text-center shadow-2xl shadow-black/40 backdrop-blur-xl md:gap-6 md:px-10 md:py-12"

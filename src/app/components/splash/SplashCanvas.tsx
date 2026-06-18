@@ -5,7 +5,7 @@ import gsap from "gsap";
 import * as THREE from "three";
 
 interface SplashCanvasProps {
-  /** 0..100 — drives the orb's inner glow. */
+  /** 0..100 — drives the orb's inner glow + halo. */
   progress: number;
   /** Completion → orb pulse + brighten. */
   isReady: boolean;
@@ -19,7 +19,23 @@ const COLORS = {
 };
 
 const isMobile = () =>
-  typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 767px)").matches;
+
+/** Soft radial sprite used for particles and the volumetric halo. */
+function makeRadialTexture(stops: ReadonlyArray<readonly [number, string]>) {
+  const c = document.createElement("canvas");
+  c.width = 128;
+  c.height = 128;
+  const ctx = c.getContext("2d");
+  if (ctx) {
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    for (const [offset, color] of stops) g.addColorStop(offset, color);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  return new THREE.CanvasTexture(c);
+}
 
 /* ------------------------------------------------------------------ Aurora */
 
@@ -59,9 +75,9 @@ const AURORA_FRAG = /* glsl */ `
     vec3 col = mix(uA, uB, smoothstep(0.0, 0.65, n));
     col = mix(col, uC, smoothstep(0.45, 1.0, q.x));
     col = mix(col, uD, smoothstep(0.7, 1.0, q.y) * 0.5);
-    float band = smoothstep(0.15, 0.95, n + uv.y * 0.25);
-    float vig = smoothstep(1.25, 0.15, length(uv - 0.5) * 1.7);
-    gl_FragColor = vec4(col * 1.25, band * vig * 0.55);
+    float band = smoothstep(0.18, 0.95, n + uv.y * 0.22);
+    float vig = smoothstep(1.25, 0.12, length(uv - 0.5) * 1.7);
+    gl_FragColor = vec4(col * 1.2, band * vig * 0.45);
   }
 `;
 
@@ -97,9 +113,8 @@ function Aurora() {
 
 /* --------------------------------------------------------------- Particles */
 
-function GlassParticles() {
+function GlassParticles({ count }: { count: number }) {
   const ref = useRef<THREE.Points>(null);
-  const count = isMobile() ? 90 : 240;
 
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3);
@@ -111,22 +126,15 @@ function GlassParticles() {
     return arr;
   }, [count]);
 
-  const sprite = useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = 64;
-    c.height = 64;
-    const ctx = c.getContext("2d");
-    if (ctx) {
-      const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-      g.addColorStop(0, "rgba(255,255,255,1)");
-      g.addColorStop(0.35, "rgba(196,214,255,0.55)");
-      g.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 64, 64);
-    }
-    return new THREE.CanvasTexture(c);
-  }, []);
-
+  const sprite = useMemo(
+    () =>
+      makeRadialTexture([
+        [0, "rgba(255,255,255,1)"],
+        [0.35, "rgba(196,214,255,0.55)"],
+        [1, "rgba(255,255,255,0)"],
+      ]),
+    [],
+  );
   useEffect(() => () => sprite.dispose(), [sprite]);
 
   useFrame((state: RootState) => {
@@ -147,7 +155,7 @@ function GlassParticles() {
         sizeAttenuation
         transparent
         depthWrite={false}
-        opacity={0.9}
+        opacity={0.85}
         color="#cfe0ff"
         blending={THREE.AdditiveBlending}
       />
@@ -157,10 +165,26 @@ function GlassParticles() {
 
 /* --------------------------------------------------------------- Glass orb */
 
-function GlassOrb({ progress, isReady }: SplashCanvasProps) {
+function GlassOrb({
+  progress,
+  isReady,
+  mobile,
+}: SplashCanvasProps & { mobile: boolean }) {
   const orb = useRef<THREE.Group>(null);
-  const glow = useRef<THREE.MeshBasicMaterial>(null);
+  const core = useRef<THREE.MeshBasicMaterial>(null);
+  const halo = useRef<THREE.MeshBasicMaterial>(null);
   const pulse = useRef({ v: 0 });
+
+  const haloTex = useMemo(
+    () =>
+      makeRadialTexture([
+        [0, "rgba(150,170,255,0.9)"],
+        [0.45, "rgba(124,58,237,0.35)"],
+        [1, "rgba(124,58,237,0)"],
+      ]),
+    [],
+  );
+  useEffect(() => () => haloTex.dispose(), [haloTex]);
 
   // Entrance: scale up 0.6 -> 1.
   useEffect(() => {
@@ -199,37 +223,69 @@ function GlassOrb({ progress, isReady }: SplashCanvasProps) {
       orb.current.rotation.y = t * 0.12;
       orb.current.rotation.x = Math.sin(t * 0.4) * 0.08;
     }
-    if (glow.current) {
-      glow.current.opacity = Math.min(
-        1,
-        0.12 + (progress / 100) * 0.3 + pulse.current.v * 0.5,
+    const p = progress / 100;
+    if (core.current) {
+      core.current.opacity = Math.min(1, 0.12 + p * 0.3 + pulse.current.v * 0.5);
+    }
+    if (halo.current) {
+      halo.current.opacity = Math.min(
+        0.85,
+        0.2 + p * 0.25 + pulse.current.v * 0.4,
       );
     }
   });
 
+  const segments = mobile ? 32 : 64;
+
   return (
     <group ref={orb}>
-      <mesh>
-        <sphereGeometry args={[1.15, 64, 64]} />
-        <MeshTransmissionMaterial
-          samples={isMobile() ? 3 : 5}
-          resolution={isMobile() ? 128 : 256}
-          thickness={1.3}
-          roughness={0.12}
-          transmission={1}
-          ior={1.35}
-          chromaticAberration={0.06}
-          distortion={0.45}
-          distortionScale={0.35}
-          temporalDistortion={0.2}
-          color="#dfe4ff"
+      {/* Volumetric glow halo behind the orb. */}
+      <mesh position={[0, 0, -1.6]} scale={6}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial
+          ref={halo}
+          map={haloTex}
+          transparent
+          opacity={0.2}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
+
+      <mesh>
+        <sphereGeometry args={[1.15, segments, segments]} />
+        {mobile ? (
+          // Cheap reflective glass — no per-frame transmission render pass.
+          <meshStandardMaterial
+            color="#dfe4ff"
+            metalness={0.1}
+            roughness={0.06}
+            envMapIntensity={1.6}
+            transparent
+            opacity={0.5}
+          />
+        ) : (
+          <MeshTransmissionMaterial
+            samples={4}
+            resolution={256}
+            thickness={1.3}
+            roughness={0.12}
+            transmission={1}
+            ior={1.35}
+            chromaticAberration={0.06}
+            distortion={0.4}
+            distortionScale={0.3}
+            temporalDistortion={0.15}
+            color="#dfe4ff"
+          />
+        )}
+      </mesh>
+
       {/* Inner light core — brightens with progress, pops on ready. */}
       <mesh scale={0.55}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, 24, 24]} />
         <meshBasicMaterial
-          ref={glow}
+          ref={core}
           color="#8aa0ff"
           transparent
           opacity={0.12}
@@ -280,32 +336,35 @@ function Rig({ children }: { children: ReactNode }) {
 /* ------------------------------------------------------------------- Canvas */
 
 export default function SplashCanvas({ progress, isReady }: SplashCanvasProps) {
-  const dprMax = isMobile() ? 1.5 : 2;
+  const mobile = isMobile();
   return (
     <Canvas
       aria-hidden="true"
-      dpr={[1, dprMax]}
+      dpr={mobile ? 1 : [1, 2]}
       camera={{ position: [0, 0, 6], fov: 42 }}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      gl={{
+        antialias: !mobile,
+        alpha: true,
+        powerPreference: "high-performance",
+      }}
       style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
     >
-      <ambientLight intensity={0.6} />
-      <pointLight position={[4, 3, 5]} intensity={6} color={COLORS.indigo} />
-      <pointLight position={[-5, -2, 3]} intensity={5} color={COLORS.cyan} />
-      <pointLight position={[0, 4, -2]} intensity={4} color={COLORS.purple} />
+      <ambientLight intensity={0.55} />
+      <pointLight position={[4, 3, 5]} intensity={5} color={COLORS.indigo} />
+      <pointLight position={[-5, -2, 3]} intensity={4} color={COLORS.cyan} />
 
       <Aurora />
       <Rig>
-        <GlassParticles />
-        <GlassOrb progress={progress} isReady={isReady} />
+        <GlassParticles count={mobile ? 60 : 200} />
+        <GlassOrb progress={progress} isReady={isReady} mobile={mobile} />
       </Rig>
 
       {/* Procedural environment (no HDR download) for glass reflections. */}
-      <Environment resolution={64}>
-        <Lightformer form="circle" intensity={2.5} position={[0, 2, 4]} scale={6} color={COLORS.purple} />
-        <Lightformer form="rect" intensity={1.6} position={[-4, 0, 2]} scale={4} color={COLORS.cyan} />
-        <Lightformer form="rect" intensity={1.6} position={[4, 0, 2]} scale={4} color={COLORS.indigo} />
-        <Lightformer form="circle" intensity={1.2} position={[0, -3, 2]} scale={5} color={COLORS.emerald} />
+      <Environment resolution={mobile ? 24 : 64}>
+        <Lightformer form="circle" intensity={2.6} position={[0, 2, 4]} scale={6} color={COLORS.purple} />
+        <Lightformer form="rect" intensity={1.8} position={[-4, 0, 2]} scale={4} color={COLORS.cyan} />
+        <Lightformer form="rect" intensity={1.8} position={[4, 0, 2]} scale={4} color={COLORS.indigo} />
+        <Lightformer form="circle" intensity={1.3} position={[0, -3, 2]} scale={5} color={COLORS.emerald} />
       </Environment>
     </Canvas>
   );
