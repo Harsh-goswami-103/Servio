@@ -14,6 +14,7 @@ import {
 // stops casual repeat-spam from the same browser at zero infra cost.
 const RATE_KEY = "servio:quote:submissions";
 
+
 function readHistory(): number[] {
   try {
     const raw = localStorage.getItem(RATE_KEY);

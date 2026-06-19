@@ -17,8 +17,12 @@ export function SignUp() {
         try {
             await createUserWithEmailAndPassword(auth, email, password);
             navigate('/');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            if (typeof err === 'object' && err !== null && 'code' in err && 'message' in err) {
+                setError((err as { message: string }).message);
+            } else {
+                setError('An unexpected error occurred during sign-up.');
+            }
         }
     };
 
@@ -28,8 +32,12 @@ export function SignUp() {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
             navigate('/');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            if (typeof err === 'object' && err !== null && 'code' in err && 'message' in err) {
+                setError((err as { message: string }).message);
+            } else {
+                setError('An unexpected error occurred with Google Sign-Up.');
+            }
         }
     };
 
