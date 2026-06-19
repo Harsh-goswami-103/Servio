@@ -166,16 +166,14 @@ export function Hero() {
                   },
                 ];
 
-                const parallaxX = (mousePosition.x - 0.5) * 4;
-                const parallaxY = (mousePosition.y - 0.5) * 4;
+                const parallaxMultipliers = [8, -10, 6, -8];
+                const multiplier = parallaxMultipliers[index];
+                const parallaxX = (mousePosition.x - 0.5) * multiplier;
+                const parallaxY = (mousePosition.y - 0.5) * multiplier;
 
                 return (
-                  <motion.div
+                  <div
                     key={card.text}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '0px 0px -100px 0px' }}
-                    transition={{ duration: 0.6, delay: 0.3 + index * 0.15 }}
                     className={`absolute ${
                       index === 0
                         ? 'top-4 -left-4 sm:top-8 sm:-left-8'
@@ -185,14 +183,19 @@ export function Hero() {
                         ? 'bottom-1/3 -left-4 sm:-left-8'
                         : 'bottom-8 -right-4 sm:-right-8'
                     } hidden lg:block`}
+                    style={{
+                      transform: `translate(${parallaxX}px, ${parallaxY}px)`,
+                      transition: 'transform 0.15s ease-out',
+                    }}
                   >
                     <motion.div
-                      animate={{
-                        ...cardAnimations[index],
-                        x: typeof cardAnimations[index].x === 'number'
-                          ? parallaxX
-                          : cardAnimations[index].x,
-                      }}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                      transition={{ duration: 0.6, delay: 0.3 + index * 0.15 }}
+                    >
+                    <motion.div
+                      animate={{ ...cardAnimations[index] }}
                       transition={{
                         duration: 5,
                         repeat: Infinity,
@@ -253,6 +256,7 @@ export function Hero() {
                       </span>
                     </motion.div>
                   </motion.div>
+                  </div>
                 );
               })}
             </div>
