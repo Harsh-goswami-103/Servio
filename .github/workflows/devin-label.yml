@@ -1,0 +1,35 @@
+name: Send Issue to Devin
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  devin:
+    if: github.event.label.name == 'devin'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create Devin Session
+        run: |
+          curl -X POST "https://api.devin.ai/v1/sessions" \
+            -H "Authorization: Bearer ${{ secrets.DEVIN_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "prompt": "Work on GitHub issue #${{ github.event.issue.number }} in repository hrx01-dev/servio.
+
+Issue URL: ${{ github.event.issue.html_url }}
+
+Title: ${{ github.event.issue.title }}
+
+Description:
+${{ github.event.issue.body }}
+
+Requirements:
+- Create a new branch
+- Implement the solution
+- Run tests if available
+- Open a pull request"
+          }
+          EOF
