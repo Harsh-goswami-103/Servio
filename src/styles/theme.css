@@ -184,3 +184,36 @@
     line-height: 1.5;
   }
 }
+
+/* Testimonials auto-scrolling marquee */
+@keyframes testimonial-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.testimonial-marquee-track {
+  animation: testimonial-marquee var(--marquee-duration, 40s) linear infinite;
+  animation-direction: var(--marquee-direction, normal);
+}
+
+.testimonial-marquee:hover .testimonial-marquee-track,
+.testimonial-marquee:focus-within .testimonial-marquee-track {
+  animation-play-state: paused;
+}
+
+/* When motion is reduced, stop the auto-scroll and let users reach every
+   card by scrolling the row horizontally (keyboard-focusable container) instead
+   of leaving the off-screen cards clipped and unreachable. */
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-marquee {
+    overflow-x: auto;
+  }
+
+  .testimonial-marquee-track {
+    animation: none;
+  }
+}
