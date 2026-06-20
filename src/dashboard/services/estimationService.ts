@@ -357,6 +357,9 @@ export async function analyzeProject(
   });
 
   const responseText = result.response.text();
+  if (!responseText || responseText.trim().length === 0) {
+    throw new Error("AI returned an empty response. Please try again.");
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(responseText);
@@ -369,6 +372,10 @@ export async function analyzeProject(
     new Set(featureCategories),
   );
   const estimation = computeEstimate(classification, pricing);
+
+  if (!userId) {
+    throw new Error("You must be signed in to save estimation history.");
+  }
 
   await addDoc(collection(db, "estimations"), {
     userId,
