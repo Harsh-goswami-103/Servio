@@ -291,7 +291,10 @@ export function ProjectEstimation() {
     setLoading(true);
 
     try {
-      const estimation = await analyzeProject(description.trim());
+      const estimation = await analyzeProject(
+        description.trim(),
+        currentUser?.uid ?? "",
+      );
       setResult(estimation);
     } catch (err) {
       const message =
