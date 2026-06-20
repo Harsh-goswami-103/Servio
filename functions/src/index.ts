@@ -91,10 +91,27 @@ async function getPricingConfig(): Promise<PricingConfig> {
         },
       };
 
+      const isValid = (n: unknown): n is number =>
+        typeof n === "number" && Number.isFinite(n);
+
+      const validFeaturePricing = Object.values(merged.featurePricing).every(
+        (v) => isValid(v) && v >= 0,
+      );
+      const validMultipliers = Object.values(
+        merged.complexityMultipliers,
+      ).every((v) => isValid(v) && v > 0);
+
       if (
-        !Number.isFinite(merged.minimumProjectCost) ||
-        !Number.isFinite(merged.maximumProjectCost) ||
-        merged.minimumProjectCost > merged.maximumProjectCost
+        !isValid(merged.minimumProjectCost) ||
+        !isValid(merged.maximumProjectCost) ||
+        !isValid(merged.bufferPercentage) ||
+        !isValid(merged.riskFactorMultiplier) ||
+        merged.minimumProjectCost < 0 ||
+        merged.maximumProjectCost < merged.minimumProjectCost ||
+        merged.bufferPercentage < 0 ||
+        merged.riskFactorMultiplier <= 0 ||
+        !validFeaturePricing ||
+        !validMultipliers
       ) {
         return DEFAULT_PRICING;
       }
@@ -142,7 +159,10 @@ Use this exact schema:
 Do NOT include any cost estimates, pricing, or monetary values.`;
 }
 
-function validateClassification(data: unknown): AIClassification {
+function validateClassification(
+  data: unknown,
+  allowedCategories: Set<string>,
+): AIClassification {
   const obj = data as Record<string, unknown>;
 
   if (
@@ -163,6 +183,7 @@ function validateClassification(data: unknown): AIClassification {
       typeof feat.name !== "string" ||
       !feat.name ||
       typeof feat.category !== "string" ||
+      !allowedCategories.has(feat.category as string) ||
       !COMPLEXITIES.has(feat.complexity as string)
     ) {
       throw new Error("Invalid feature in classification");
@@ -281,13 +302,14 @@ export const analyzeProject = onCall(
       throw new HttpsError("unauthenticated", "You must be signed in.");
     }
 
-    const description = request.data?.description;
-    if (!description || typeof description !== "string") {
+    const rawDescription = request.data?.description;
+    if (typeof rawDescription !== "string") {
       throw new HttpsError(
         "invalid-argument",
         "A project description is required.",
       );
     }
+    const description = rawDescription.trim();
 
     if (description.length < 10) {
       throw new HttpsError(
@@ -352,7 +374,10 @@ export const analyzeProject = onCall(
 
       let classification: AIClassification;
       try {
-        classification = validateClassification(parsed);
+        classification = validateClassification(
+          parsed,
+          new Set(featureCategories),
+        );
       } catch {
         throw new HttpsError(
           "internal",

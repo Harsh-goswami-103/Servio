@@ -9,6 +9,7 @@ import {
   Plus,
   Trash2,
   RotateCcw,
+  ShieldAlert,
 } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../Firebase/firebase";
@@ -36,44 +37,18 @@ interface PricingConfig {
   riskFactorMultiplier: number;
 }
 
-const DEFAULT_CONFIG: PricingConfig = {
-  featurePricing: {
-    authentication: 5000,
-    dashboard: 15000,
-    payment_gateway: 12000,
-    real_time_features: 18000,
-    database_crud: 8000,
-    file_upload: 6000,
-    search_functionality: 7000,
-    notifications: 5000,
-    api_integration: 10000,
-    analytics: 8000,
-    user_management: 7000,
-    responsive_design: 4000,
-    seo_optimization: 3000,
-    social_login: 4000,
-    email_service: 5000,
-    chat_messaging: 14000,
-    maps_geolocation: 9000,
-    media_streaming: 16000,
-    cms_content_management: 12000,
-    ecommerce_cart: 15000,
-    order_management: 12000,
-    inventory_management: 10000,
-    reporting: 9000,
-    multi_language: 6000,
-    accessibility: 5000,
-  },
+const EMPTY_CONFIG: PricingConfig = {
+  featurePricing: {},
   complexityMultipliers: {
     low: 1.0,
     medium: 1.3,
     high: 1.7,
     enterprise: 2.2,
   },
-  minimumProjectCost: 10000,
-  maximumProjectCost: 500000,
-  bufferPercentage: 15,
-  riskFactorMultiplier: 1.1,
+  minimumProjectCost: 0,
+  maximumProjectCost: 0,
+  bufferPercentage: 0,
+  riskFactorMultiplier: 1.0,
 };
 
 function formatFeatureLabel(key: string): string {
@@ -84,11 +59,12 @@ function formatFeatureLabel(key: string): string {
 }
 
 export function PricingConfig() {
-  const [config, setConfig] = useState<PricingConfig>(DEFAULT_CONFIG);
+  const [config, setConfig] = useState<PricingConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [newFeatureKey, setNewFeatureKey] = useState("");
   const [newFeaturePrice, setNewFeaturePrice] = useState("");
 
@@ -97,10 +73,30 @@ export function PricingConfig() {
       try {
         const snap = await getDoc(doc(db, "pricingConfig", "default"));
         if (snap.exists()) {
-          setConfig(snap.data() as PricingConfig);
+          const raw = snap.data() as Partial<PricingConfig>;
+          setConfig({
+            featurePricing: raw.featurePricing ?? {},
+            complexityMultipliers: raw.complexityMultipliers ?? {
+              low: 1.0,
+              medium: 1.3,
+              high: 1.7,
+              enterprise: 2.2,
+            },
+            minimumProjectCost: raw.minimumProjectCost ?? 0,
+            maximumProjectCost: raw.maximumProjectCost ?? 0,
+            bufferPercentage: raw.bufferPercentage ?? 0,
+            riskFactorMultiplier: raw.riskFactorMultiplier ?? 1.0,
+          });
+        } else {
+          setConfig(EMPTY_CONFIG);
         }
-      } catch {
-        // Use defaults
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        if (message.includes("permission") || message.includes("PERMISSION_DENIED")) {
+          setAccessDenied(true);
+        } else {
+          setConfig(EMPTY_CONFIG);
+        }
       } finally {
         setLoading(false);
       }
@@ -109,6 +105,7 @@ export function PricingConfig() {
   }, []);
 
   const handleSave = async () => {
+    if (!config) return;
     setSaving(true);
     setError(null);
     setSuccess(false);
@@ -127,14 +124,18 @@ export function PricingConfig() {
   };
 
   const updateFeaturePrice = (key: string, value: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      featurePricing: { ...prev.featurePricing, [key]: value },
-    }));
+    setConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        featurePricing: { ...prev.featurePricing, [key]: value },
+      };
+    });
   };
 
   const removeFeature = (key: string) => {
     setConfig((prev) => {
+      if (!prev) return prev;
       const updated = { ...prev.featurePricing };
       delete updated[key];
       return { ...prev, featurePricing: updated };
@@ -150,29 +151,35 @@ export function PricingConfig() {
     const price = parseInt(newFeaturePrice, 10);
 
     if (!key || isNaN(price) || price <= 0) return;
-    if (config.featurePricing[key] !== undefined) {
+    if (config?.featurePricing[key] !== undefined) {
       setError(`Feature "${formatFeatureLabel(key)}" already exists.`);
       return;
     }
 
-    setConfig((prev) => ({
-      ...prev,
-      featurePricing: { ...prev.featurePricing, [key]: price },
-    }));
+    setConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        featurePricing: { ...prev.featurePricing, [key]: price },
+      };
+    });
     setNewFeatureKey("");
     setNewFeaturePrice("");
     setError(null);
   };
 
   const updateMultiplier = (key: string, value: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      complexityMultipliers: { ...prev.complexityMultipliers, [key]: value },
-    }));
+    setConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        complexityMultipliers: { ...prev.complexityMultipliers, [key]: value },
+      };
+    });
   };
 
   const handleReset = () => {
-    setConfig(DEFAULT_CONFIG);
+    setConfig(EMPTY_CONFIG);
     setError(null);
     setSuccess(false);
   };
@@ -187,6 +194,23 @@ export function PricingConfig() {
       </div>
     );
   }
+
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <ShieldAlert className="h-12 w-12 text-red-400 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          Access Denied
+        </h2>
+        <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-sm">
+          You do not have permission to access pricing configuration.
+          Contact an administrator for access.
+        </p>
+      </div>
+    );
+  }
+
+  if (!config) return null;
 
   return (
     <div className="space-y-6">
@@ -256,33 +280,39 @@ export function PricingConfig() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {Object.entries(config.featurePricing).map(([key, value]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <label className="flex-1 min-w-0">
-                    <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1 truncate">
-                      {formatFeatureLabel(key)}
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={value}
-                      onChange={(e) =>
-                        updateFeaturePrice(key, parseInt(e.target.value, 10) || 0)
-                      }
-                      className={inputClass}
-                    />
-                  </label>
-                  <button
-                    onClick={() => removeFeature(key)}
-                    className="mt-5 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                    aria-label={`Remove ${formatFeatureLabel(key)}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {Object.keys(config.featurePricing).length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                No features configured. Add features below to get started.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {Object.entries(config.featurePricing).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <label className="flex-1 min-w-0">
+                      <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1 truncate">
+                        {formatFeatureLabel(key)}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={value}
+                        onChange={(e) =>
+                          updateFeaturePrice(key, parseInt(e.target.value, 10) || 0)
+                        }
+                        className={inputClass}
+                      />
+                    </label>
+                    <button
+                      onClick={() => removeFeature(key)}
+                      className="mt-5 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      aria-label={`Remove ${formatFeatureLabel(key)}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <Separator className="my-4" />
 
@@ -380,10 +410,13 @@ export function PricingConfig() {
                   min={0}
                   value={config.minimumProjectCost}
                   onChange={(e) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      minimumProjectCost: parseInt(e.target.value, 10) || 0,
-                    }))
+                    setConfig((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        minimumProjectCost: parseInt(e.target.value, 10) || 0,
+                      };
+                    })
                   }
                   className={inputClass}
                 />
@@ -397,10 +430,13 @@ export function PricingConfig() {
                   min={0}
                   value={config.maximumProjectCost}
                   onChange={(e) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      maximumProjectCost: parseInt(e.target.value, 10) || 0,
-                    }))
+                    setConfig((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        maximumProjectCost: parseInt(e.target.value, 10) || 0,
+                      };
+                    })
                   }
                   className={inputClass}
                 />
@@ -415,10 +451,13 @@ export function PricingConfig() {
                   max={100}
                   value={config.bufferPercentage}
                   onChange={(e) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      bufferPercentage: parseInt(e.target.value, 10) || 0,
-                    }))
+                    setConfig((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        bufferPercentage: parseInt(e.target.value, 10) || 0,
+                      };
+                    })
                   }
                   className={inputClass}
                 />
@@ -433,10 +472,13 @@ export function PricingConfig() {
                   step={0.05}
                   value={config.riskFactorMultiplier}
                   onChange={(e) =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      riskFactorMultiplier: parseFloat(e.target.value) || 0,
-                    }))
+                    setConfig((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        riskFactorMultiplier: parseFloat(e.target.value) || 0,
+                      };
+                    })
                   }
                   className={inputClass}
                 />
