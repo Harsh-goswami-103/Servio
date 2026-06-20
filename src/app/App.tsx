@@ -29,6 +29,8 @@ import { UpdatesFeed } from "../dashboard/pages/UpdatesFeed";
 import { PaymentManagement } from "../dashboard/pages/PaymentManagement";
 import { InvoiceManagement } from "../dashboard/pages/InvoiceManagement";
 import { ProjectResources } from "../dashboard/pages/ProjectResources";
+import { ProjectEstimation } from "../dashboard/pages/ProjectEstimation";
+import { PricingConfig } from "../dashboard/pages/PricingConfig";
 
 const REVEAL_EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
@@ -107,7 +109,33 @@ function LandingShell() {
         transition={{ duration: loading.reducedMotion ? 0.2 : 0.8, ease: REVEAL_EASE }}
         aria-hidden={!loading.isReady || undefined}
       >
-        <LandingPage />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardOverview />} />
+                <Route path="progress" element={<ProjectProgress />} />
+                <Route path="updates" element={<UpdatesFeed />} />
+                <Route path="payments" element={<PaymentManagement />} />
+                <Route path="invoices" element={<InvoiceManagement />} />
+                <Route path="resources" element={<ProjectResources />} />
+              <Route path="estimation" element={<ProjectEstimation />} />
+              <Route path="pricing-config" element={<PricingConfig />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
       </motion.div>
 
       <AnimatePresence onExitComplete={handleExitComplete}>
