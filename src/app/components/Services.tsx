@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
 import { services } from '../data/servicesData';
+import { TypingText } from './TypingText';
 
 // Fine fractal-noise grain to kill blur banding on the light backdrop. Fully
 // percent-encoded so the data URI survives any bundler / CSS parser.
@@ -196,7 +197,7 @@ export function Services() {
               animate={reduce ? undefined : { backgroundPositionX: ['0%', '200%'] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             >
-              Succeed Online
+              <TypingText text="Succeed Online" delay={200} cursorColor="bg-indigo-500" />
             </motion.span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
