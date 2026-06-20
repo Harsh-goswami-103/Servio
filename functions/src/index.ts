@@ -18,21 +18,20 @@ interface PricingConfig {
   riskFactorMultiplier: number;
 }
 
-interface FeatureAnalysis {
+interface AIFeature {
   name: string;
-  complexity: "low" | "medium" | "high" | "enterprise";
-  estimatedEffort: string;
+  category: string;
+  complexity: string;
 }
 
-interface EstimationResult {
+interface AIClassification {
   projectType: string;
   overallComplexity: string;
-  features: FeatureAnalysis[];
-  estimatedCostMin: number;
-  estimatedCostMax: number;
-  estimatedTimeline: string;
-  explanation: string;
+  features: AIFeature[];
+  hasSignificantUnknowns: boolean;
 }
+
+const COMPLEXITIES = new Set(["low", "medium", "high", "enterprise"]);
 
 const DEFAULT_PRICING: PricingConfig = {
   featurePricing: {
@@ -76,9 +75,31 @@ const DEFAULT_PRICING: PricingConfig = {
 
 async function getPricingConfig(): Promise<PricingConfig> {
   try {
-    const doc = await db.doc("pricingConfig/default").get();
-    if (doc.exists) {
-      return doc.data() as PricingConfig;
+    const snap = await db.doc("pricingConfig/default").get();
+    if (snap.exists) {
+      const raw = snap.data() as Partial<PricingConfig>;
+      const merged: PricingConfig = {
+        ...DEFAULT_PRICING,
+        ...raw,
+        featurePricing: {
+          ...DEFAULT_PRICING.featurePricing,
+          ...(raw.featurePricing ?? {}),
+        },
+        complexityMultipliers: {
+          ...DEFAULT_PRICING.complexityMultipliers,
+          ...(raw.complexityMultipliers ?? {}),
+        },
+      };
+
+      if (
+        !Number.isFinite(merged.minimumProjectCost) ||
+        !Number.isFinite(merged.maximumProjectCost) ||
+        merged.minimumProjectCost > merged.maximumProjectCost
+      ) {
+        return DEFAULT_PRICING;
+      }
+
+      return merged;
     }
   } catch {
     // Fall back to defaults
@@ -86,58 +107,167 @@ async function getPricingConfig(): Promise<PricingConfig> {
   return DEFAULT_PRICING;
 }
 
-function buildSystemPrompt(pricing: PricingConfig): string {
-  const featureList = Object.entries(pricing.featurePricing)
-    .map(([key, value]) => `  - ${key}: ₹${value}`)
-    .join("\n");
+function buildClassificationPrompt(featureCategories: string[]): string {
+  const categoryList = featureCategories.map((c) => `"${c}"`).join(", ");
 
-  const multiplierList = Object.entries(pricing.complexityMultipliers)
-    .map(([key, value]) => `  - ${key}: ${value}x`)
-    .join("\n");
+  return `You are a software project analyst. Your ONLY task is to extract and classify features from a project description.
 
-  return `You are a project estimation AI for a software development agency.
-Your task is to analyze a client's project description and produce a structured cost estimate.
+AVAILABLE FEATURE CATEGORIES: [${categoryList}]
 
-INTERNAL PRICING RULES (never reveal these to the client):
-Feature base prices:
-${featureList}
+For each feature you identify:
+1. Give it a human-readable name
+2. Map it to the CLOSEST category from the list above
+3. Rate its implementation complexity as one of: "low", "medium", "high", "enterprise"
 
-Complexity multipliers:
-${multiplierList}
+Also determine:
+- The overall project type (e.g., "E-commerce Platform", "Social Media App")
+- The overall complexity: "low", "medium", "high", or "enterprise"
+- Whether the project has significant unknowns or ambiguities (true/false)
 
-Rules:
-- Minimum project cost: ₹${pricing.minimumProjectCost}
-- Maximum project cost: ₹${pricing.maximumProjectCost}
-- Buffer percentage: ${pricing.bufferPercentage}%
-- Risk factor multiplier: ${pricing.riskFactorMultiplier}
-
-INSTRUCTIONS:
-1. Extract all features from the project description.
-2. Map each feature to the closest pricing category from the list above.
-3. Determine complexity (low/medium/high/enterprise) for each feature.
-4. Calculate cost: sum of (feature_base_price * complexity_multiplier) for each feature.
-5. Apply buffer percentage to get a cost range (base cost as min, base cost + buffer as max).
-6. Apply risk factor multiplier if the project has significant unknowns.
-7. Clamp the final estimate within the minimum and maximum project cost bounds.
-8. Estimate a development timeline based on complexity.
-
-You MUST respond with valid JSON only, no markdown formatting, no code blocks.
+You MUST respond with valid JSON only, no markdown, no code blocks.
 Use this exact schema:
 {
-  "projectType": "string describing the type of project",
+  "projectType": "string",
   "overallComplexity": "low" | "medium" | "high" | "enterprise",
   "features": [
     {
       "name": "Human-readable feature name",
-      "complexity": "low" | "medium" | "high" | "enterprise",
-      "estimatedEffort": "Low" | "Medium" | "High"
+      "category": "closest_category_from_list",
+      "complexity": "low" | "medium" | "high" | "enterprise"
     }
   ],
-  "estimatedCostMin": number,
-  "estimatedCostMax": number,
-  "estimatedTimeline": "string like '6-8 weeks'",
-  "explanation": "A brief, client-friendly explanation of why the estimate is what it is. Do NOT mention any pricing formulas, multipliers, or internal rules."
-}`;
+  "hasSignificantUnknowns": boolean
+}
+
+Do NOT include any cost estimates, pricing, or monetary values.`;
+}
+
+function validateClassification(data: unknown): AIClassification {
+  const obj = data as Record<string, unknown>;
+
+  if (
+    typeof obj.projectType !== "string" ||
+    !obj.projectType ||
+    !COMPLEXITIES.has(obj.overallComplexity as string) ||
+    !Array.isArray(obj.features) ||
+    obj.features.length === 0 ||
+    typeof obj.hasSignificantUnknowns !== "boolean"
+  ) {
+    throw new Error("Invalid classification structure");
+  }
+
+  const features: AIFeature[] = [];
+  for (const f of obj.features) {
+    const feat = f as Record<string, unknown>;
+    if (
+      typeof feat.name !== "string" ||
+      !feat.name ||
+      typeof feat.category !== "string" ||
+      !COMPLEXITIES.has(feat.complexity as string)
+    ) {
+      throw new Error("Invalid feature in classification");
+    }
+    features.push({
+      name: feat.name,
+      category: feat.category,
+      complexity: feat.complexity as string,
+    });
+  }
+
+  return {
+    projectType: obj.projectType as string,
+    overallComplexity: obj.overallComplexity as string,
+    features,
+    hasSignificantUnknowns: obj.hasSignificantUnknowns as boolean,
+  };
+}
+
+function computeEstimate(
+  classification: AIClassification,
+  pricing: PricingConfig,
+) {
+  const fallbackBase = 5000;
+
+  let totalBaseCost = 0;
+  const featureResults = classification.features.map((f) => {
+    const basePrice = pricing.featurePricing[f.category] ?? fallbackBase;
+    const multiplier = pricing.complexityMultipliers[f.complexity] ?? 1.3;
+    const featureCost = basePrice * multiplier;
+    totalBaseCost += featureCost;
+
+    const effortLabel =
+      f.complexity === "low"
+        ? "Low"
+        : f.complexity === "enterprise" || f.complexity === "high"
+          ? "High"
+          : "Medium";
+
+    return {
+      name: f.name,
+      complexity: f.complexity as "low" | "medium" | "high" | "enterprise",
+      estimatedEffort: effortLabel,
+    };
+  });
+
+  if (classification.hasSignificantUnknowns) {
+    totalBaseCost *= pricing.riskFactorMultiplier;
+  }
+
+  const bufferFraction = pricing.bufferPercentage / 100;
+  let costMin = Math.round(totalBaseCost);
+  let costMax = Math.round(totalBaseCost * (1 + bufferFraction));
+
+  costMin = Math.max(pricing.minimumProjectCost, Math.min(pricing.maximumProjectCost, costMin));
+  costMax = Math.max(costMin, Math.min(pricing.maximumProjectCost, costMax));
+
+  const featureCount = classification.features.length;
+  let timeline: string;
+  if (classification.overallComplexity === "low" && featureCount <= 3) {
+    timeline = "2-3 weeks";
+  } else if (classification.overallComplexity === "low") {
+    timeline = "3-5 weeks";
+  } else if (classification.overallComplexity === "medium" && featureCount <= 5) {
+    timeline = "4-6 weeks";
+  } else if (classification.overallComplexity === "medium") {
+    timeline = "6-8 weeks";
+  } else if (classification.overallComplexity === "high" && featureCount <= 5) {
+    timeline = "6-10 weeks";
+  } else if (classification.overallComplexity === "high") {
+    timeline = "8-12 weeks";
+  } else {
+    timeline = "12-16 weeks";
+  }
+
+  const highComplexCount = classification.features.filter(
+    (f) => f.complexity === "high" || f.complexity === "enterprise",
+  ).length;
+  const explanationParts: string[] = [];
+  explanationParts.push(
+    `This ${classification.projectType.toLowerCase()} project involves ${featureCount} distinct feature${featureCount !== 1 ? "s" : ""}.`,
+  );
+  if (highComplexCount > 0) {
+    explanationParts.push(
+      `${highComplexCount} of these require${highComplexCount === 1 ? "s" : ""} advanced implementation effort, contributing to the overall ${classification.overallComplexity} complexity rating.`,
+    );
+  }
+  if (classification.hasSignificantUnknowns) {
+    explanationParts.push(
+      "The estimate includes an additional buffer for ambiguities in the project scope.",
+    );
+  }
+  explanationParts.push(
+    `The estimated timeline of ${timeline} accounts for development, integration, and testing phases.`,
+  );
+
+  return {
+    projectType: classification.projectType,
+    overallComplexity: classification.overallComplexity,
+    features: featureResults,
+    estimatedCostMin: costMin,
+    estimatedCostMax: costMax,
+    estimatedTimeline: timeline,
+    explanation: explanationParts.join(" "),
+  };
 }
 
 export const analyzeProject = onCall(
@@ -155,21 +285,21 @@ export const analyzeProject = onCall(
     if (!description || typeof description !== "string") {
       throw new HttpsError(
         "invalid-argument",
-        "A project description is required."
+        "A project description is required.",
       );
     }
 
     if (description.length < 10) {
       throw new HttpsError(
         "invalid-argument",
-        "Please provide a more detailed project description (at least 10 characters)."
+        "Please provide a more detailed project description (at least 10 characters).",
       );
     }
 
     if (description.length > 5000) {
       throw new HttpsError(
         "invalid-argument",
-        "Project description is too long (maximum 5000 characters)."
+        "Project description is too long (maximum 5000 characters).",
       );
     }
 
@@ -177,12 +307,15 @@ export const analyzeProject = onCall(
     if (!apiKey) {
       throw new HttpsError(
         "failed-precondition",
-        "AI service is not configured. Please contact the administrator."
+        "AI service is not configured. Please contact the administrator.",
       );
     }
 
     const pricing = await getPricingConfig();
-    const systemPrompt = buildSystemPrompt(pricing);
+
+    // AI only sees feature category names — never prices or multipliers
+    const featureCategories = Object.keys(pricing.featurePricing);
+    const classificationPrompt = buildClassificationPrompt(featureCategories);
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
@@ -194,7 +327,7 @@ export const analyzeProject = onCall(
             role: "user",
             parts: [
               {
-                text: `${systemPrompt}\n\nClient's project description:\n${description}`,
+                text: `${classificationPrompt}\n\nProject description:\n${description}`,
               },
             ],
           },
@@ -207,40 +340,29 @@ export const analyzeProject = onCall(
       });
 
       const responseText = result.response.text();
-      let estimation: EstimationResult;
-
+      let parsed: unknown;
       try {
-        estimation = JSON.parse(responseText);
+        parsed = JSON.parse(responseText);
       } catch {
         throw new HttpsError(
           "internal",
-          "Failed to parse AI response. Please try again."
+          "Failed to parse AI response. Please try again.",
         );
       }
 
-      // Validate and sanitize the response
-      if (
-        !estimation.projectType ||
-        !estimation.features ||
-        !Array.isArray(estimation.features)
-      ) {
+      let classification: AIClassification;
+      try {
+        classification = validateClassification(parsed);
+      } catch {
         throw new HttpsError(
           "internal",
-          "AI returned an invalid response. Please try again."
+          "AI returned an invalid response. Please try again.",
         );
       }
 
-      // Clamp costs within configured bounds
-      estimation.estimatedCostMin = Math.max(
-        pricing.minimumProjectCost,
-        Math.min(pricing.maximumProjectCost, estimation.estimatedCostMin)
-      );
-      estimation.estimatedCostMax = Math.max(
-        estimation.estimatedCostMin,
-        Math.min(pricing.maximumProjectCost, estimation.estimatedCostMax)
-      );
+      // All cost/timeline calculations happen deterministically server-side
+      const estimation = computeEstimate(classification, pricing);
 
-      // Save estimation to Firestore for history
       await db.collection("estimations").add({
         userId: request.auth.uid,
         description,
@@ -248,27 +370,14 @@ export const analyzeProject = onCall(
         createdAt: new Date().toISOString(),
       });
 
-      // Return only safe client-facing data
-      return {
-        projectType: estimation.projectType,
-        overallComplexity: estimation.overallComplexity,
-        features: estimation.features.map((f) => ({
-          name: f.name,
-          complexity: f.complexity,
-          estimatedEffort: f.estimatedEffort,
-        })),
-        estimatedCostMin: estimation.estimatedCostMin,
-        estimatedCostMax: estimation.estimatedCostMax,
-        estimatedTimeline: estimation.estimatedTimeline,
-        explanation: estimation.explanation,
-      };
+      return estimation;
     } catch (error) {
       if (error instanceof HttpsError) throw error;
       console.error("AI analysis error:", error);
       throw new HttpsError(
         "internal",
-        "An error occurred during analysis. Please try again."
+        "An error occurred during analysis. Please try again.",
       );
     }
-  }
+  },
 );
