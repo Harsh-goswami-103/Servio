@@ -9,33 +9,33 @@
   background: linear-gradient(
     90deg,
     #1e1b4b 0%,
-    #4338ca 30%,
-    #ffffff 48%,
-    #c4b5fd 52%,
-    #4338ca 70%,
+    #4338ca 35%,
+    #e0e7ff 49%,
+    #c4b5fd 51%,
+    #4338ca 65%,
     #1e1b4b 100%
   );
   background-size: 200% auto;
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shimmer-sweep 3.5s linear infinite;
+  animation: shimmer-sweep 6s linear infinite;
 }
 .dark .hero-shimmer {
   background: linear-gradient(
     90deg,
     #818cf8 0%,
-    #a5b4fc 30%,
-    #ffffff 48%,
-    #c4b5fd 52%,
-    #a5b4fc 70%,
+    #a5b4fc 35%,
+    #ddd6fe 49%,
+    #c4b5fd 51%,
+    #a5b4fc 65%,
     #818cf8 100%
   );
   background-size: 200% auto;
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shimmer-sweep 3.5s linear infinite;
+  animation: shimmer-sweep 6s linear infinite;
 }
 
 /* ── Hero "Converts" glow pulse ──────────────────────────────────────────── */
