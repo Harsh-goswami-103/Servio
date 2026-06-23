@@ -10,9 +10,14 @@
  * gate sensitive writes on a short-lived verification claim. This module is
  * intentionally written so that swapping the backend only touches these
  * functions. See docs/ADMIN.md → "Security PIN".
+ *
+ * Iteration count: 10,000 is chosen for a fast, non-blocking client-side UX
+ * (~50–100 ms on a mid-range device). The count is stored per-credential so
+ * existing PINs hashed at a different iteration count still verify correctly,
+ * and the value can be raised when verification moves server-side.
  */
 
-const PIN_ITERATIONS = 150_000;
+export const PIN_ITERATIONS = 10_000;
 const DERIVED_BITS = 256;
 const encoder = new TextEncoder();
 
