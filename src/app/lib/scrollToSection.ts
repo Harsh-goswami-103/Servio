@@ -47,23 +47,19 @@ export function scrollToSectionFromAnyRoute(
   if (currentPathname !== '/') {
     navigate('/');
     
-    if (document.getElementById(id)) {
-      doScroll();
-    } else {
-      const observer = new MutationObserver((_mutations, obs) => {
-        if (document.getElementById(id)) {
-          obs.disconnect();
-          doScroll();
-        }
-      });
-      
-      observer.observe(document.body, { childList: true, subtree: true });
-      
-      // Fallback timeout to prevent memory leaks if the element never appears
-      setTimeout(() => {
-        observer.disconnect();
-      }, 2000);
-    }
+    const observer = new MutationObserver((_mutations, obs) => {
+      if (document.getElementById(id)) {
+        obs.disconnect();
+        doScroll();
+      }
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Fallback timeout to prevent memory leaks if the element never appears
+    setTimeout(() => {
+      observer.disconnect();
+    }, 2000);
   } else {
     doScroll();
   }
