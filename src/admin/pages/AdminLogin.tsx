@@ -14,7 +14,7 @@ interface LocationState {
 }
 
 export function AdminLogin() {
-  const { firebaseUser, isAdmin, loading, admin } = useAdmin();
+  const { firebaseUser, isAdmin, loading, admin, error: adminError, _debug } = useAdmin();
   const { pinSessionVerified } = usePinGate();
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,6 +114,21 @@ export function AdminLogin() {
               <span className="font-medium">{firebaseUser?.email}</span>, but
               this account does not have admin access.
             </p>
+            {adminError && (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                Error: {adminError}
+              </p>
+            )}
+            {_debug && (
+              <details className="rounded-lg bg-muted px-3 py-2 text-left text-xs text-muted-foreground">
+                <summary className="cursor-pointer font-medium">
+                  Diagnostic info
+                </summary>
+                <pre className="mt-1 whitespace-pre-wrap break-all">
+                  {_debug}
+                </pre>
+              </details>
+            )}
             <Button
               type="button"
               variant="outline"

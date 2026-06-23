@@ -3,6 +3,7 @@ import { Smartphone, Zap, TrendingUp, Sparkles } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useInView } from 'motion/react';
 import { TypingText } from './TypingText';
+import { scrollToSection } from '../lib/scrollToSection';
 
 const heroImage = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3ZWJzaXRlJTIwZGFzaGJvYXJkJTIwZGVzaWdufGVufDF8fHx8MTc4MTcwMjY1OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 
@@ -29,12 +30,6 @@ export function Hero() {
     });
   };
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
-    }
-  };
 
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 pt-20" onMouseMove={handleMouseMove} ref={containerRef}>
@@ -63,10 +58,12 @@ export function Hero() {
               <span className="text-sm text-gray-700 dark:text-gray-200">Available for new projects</span>
             </motion.div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Your Business Deserves a Website That{' '}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                <TypingText text="Converts" delay={1200} triggerOnView={false} cursorColor="bg-indigo-600" />
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+              <span className="hero-shimmer">
+                Your Business Deserves a Website That{' '}
+              </span>
+              <span className="converts-glow bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Converts
               </span>
             </h1>
 
