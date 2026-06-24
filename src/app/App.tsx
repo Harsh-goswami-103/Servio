@@ -19,6 +19,9 @@ import { ServiceDetailPage } from "./components/ServiceDetailPage";
 import { PrivacyPolicy } from "./components/PrivacyPolicy";
 import { TermsOfService } from "./components/TermsOfService";
 import { CookiePolicy } from "./components/CookiePolicy";
+import { About } from "./components/About";
+import { Blog } from "./components/Blog";
+import { Careers } from "./components/Careers";
 import { ThemeProvider } from "./hooks/useTheme";
 import { SplashScreen } from "./components/SplashScreen";
 import { AuthProvider } from "../Firebase/AuthContext";
@@ -172,6 +175,9 @@ export default function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/careers" element={<Careers />} />
               <Route
                 path="/dashboard"
                 element={
