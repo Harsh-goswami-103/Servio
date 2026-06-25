@@ -384,7 +384,7 @@ export function Projects() {
               <select
                 id="project-status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+                onChange={(e) => { markDirty(); setStatus(e.target.value as ProjectStatus); }}
                 className={inputClasses}
               >
                 {STATUS_OPTIONS.map((option) => (
