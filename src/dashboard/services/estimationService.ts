@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   collection,
   query,
@@ -127,84 +126,6 @@ async function getPricingConfig(): Promise<PricingConfig> {
   return DEFAULT_PRICING;
 }
 
-function buildClassificationPrompt(featureCategories: string[]): string {
-  const categoryList = featureCategories.map((c) => `"${c}"`).join(", ");
-
-  return `You are a software project analyst. Your ONLY task is to extract and classify features from a project description.
-
-AVAILABLE FEATURE CATEGORIES: [${categoryList}]
-
-For each feature you identify:
-1. Give it a human-readable name
-2. Map it to the CLOSEST category from the list above
-3. Rate its implementation complexity as one of: "low", "medium", "high", "enterprise"
-
-Also determine:
-- The overall project type (e.g., "E-commerce Platform", "Social Media App")
-- The overall complexity: "low", "medium", "high", or "enterprise"
-- Whether the project has significant unknowns or ambiguities (true/false)
-
-You MUST respond with valid JSON only, no markdown, no code blocks.
-Use this exact schema:
-{
-  "projectType": "string",
-  "overallComplexity": "low" | "medium" | "high" | "enterprise",
-  "features": [
-    {
-      "name": "Human-readable feature name",
-      "category": "closest_category_from_list",
-      "complexity": "low" | "medium" | "high" | "enterprise"
-    }
-  ],
-  "hasSignificantUnknowns": boolean
-}
-
-Do NOT include any cost estimates, pricing, or monetary values.`;
-}
-
-function validateClassification(
-  data: unknown,
-  allowedCategories: Set<string>,
-): AIClassification {
-  const obj = data as Record<string, unknown>;
-
-  if (
-    typeof obj.projectType !== "string" ||
-    !obj.projectType ||
-    !COMPLEXITIES.has(obj.overallComplexity as string) ||
-    !Array.isArray(obj.features) ||
-    obj.features.length === 0 ||
-    typeof obj.hasSignificantUnknowns !== "boolean"
-  ) {
-    throw new Error("Invalid classification structure");
-  }
-
-  const features: AIFeature[] = [];
-  for (const f of obj.features) {
-    const feat = f as Record<string, unknown>;
-    if (
-      typeof feat.name !== "string" ||
-      !feat.name ||
-      typeof feat.category !== "string" ||
-      !allowedCategories.has(feat.category as string) ||
-      !COMPLEXITIES.has(feat.complexity as string)
-    ) {
-      throw new Error("Invalid feature in classification");
-    }
-    features.push({
-      name: feat.name,
-      category: feat.category,
-      complexity: feat.complexity as string,
-    });
-  }
-
-  return {
-    projectType: obj.projectType as string,
-    overallComplexity: obj.overallComplexity as string,
-    features,
-    hasSignificantUnknowns: obj.hasSignificantUnknowns as boolean,
-  };
-}
 
 function computeEstimate(
   classification: AIClassification,
@@ -324,53 +245,37 @@ export async function analyzeProject(
     );
   }
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-  if (!apiKey) {
-    throw new Error(
-      "AI service is not configured. Set VITE_GEMINI_API_KEY in your environment.",
-    );
-  }
-
   const pricing = await getPricingConfig();
   const featureCategories = Object.keys(pricing.featurePricing);
-  const classificationPrompt = buildClassificationPrompt(featureCategories);
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // Use VITE_API_BASE_URL if it exists (for production when Firebase calls Vercel).
+  // Otherwise, default to empty string (for local development via Vite proxy).
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
-  const result = await model.generateContent({
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: `${classificationPrompt}\n\nProject description:\n${trimmed}`,
-          },
-        ],
-      },
-    ],
-    generationConfig: {
-      temperature: 0.3,
-      maxOutputTokens: 2048,
-      responseMimeType: "application/json",
+  // Call the Vercel Serverless Function instead of Google Gemini directly
+  const response = await fetch(`${baseUrl}/api/estimate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      description: trimmed,
+      featureCategories,
+    }),
   });
 
-  const responseText = result.response.text();
-  if (!responseText || responseText.trim().length === 0) {
-    throw new Error("AI returned an empty response. Please try again.");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(responseText);
-  } catch {
-    throw new Error("Failed to parse AI response. Please try again.");
+  if (!response.ok) {
+    let errorMessage = "Failed to fetch estimation from server.";
+    try {
+      const errorData = await response.json();
+      if (errorData.error) errorMessage = errorData.error;
+    } catch {
+      // Ignored
+    }
+    throw new Error(errorMessage);
   }
 
-  const classification = validateClassification(
-    parsed,
-    new Set(featureCategories),
-  );
+  const classification = await response.json() as AIClassification;
   const estimation = computeEstimate(classification, pricing);
 
   if (!userId) {

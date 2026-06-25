@@ -31,3 +31,4 @@ Thumbs.db
 .firebase/
 serviceAccountKey.json
 **/serviceAccountKey*.json
+.vercel
