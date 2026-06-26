@@ -91,6 +91,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@types/three": "^0.160.0",
+    "@vercel/node": "^5.8.21",
     "@vitejs/plugin-react": "4.7.0",
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^9.39.4",
