@@ -2,6 +2,7 @@ import { Link, useParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Tag } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { SEO } from './SEO';
 import { motion, useReducedMotion } from 'motion/react';
 import { posts } from '../lib/blogData';
 
@@ -23,6 +24,12 @@ export function BlogPost() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
+      <SEO
+        title={post.title}
+        description={post.excerpt}
+        canonical={`/blog/${post.slug}`}
+        ogType="article"
+      />
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
