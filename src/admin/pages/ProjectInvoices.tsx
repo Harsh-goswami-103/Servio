@@ -244,7 +244,7 @@ export function ProjectInvoices() {
           updatedAt: serverTimestamp(),
         });
       }
-      await writeAuditLog({
+      const auditOk = await writeAuditLog({
         actorUid: admin.uid,
         actorEmail: admin.email,
         action: editingId ? "invoice.update" : "invoice.create",
@@ -254,7 +254,15 @@ export function ProjectInvoices() {
       });
       resetForm();
       setDialogOpen(false);
-      toast.success(editingId ? "Invoice updated." : "Invoice issued.");
+      if (auditOk) {
+        toast.success(editingId ? "Invoice updated." : "Invoice issued.");
+      } else {
+        toast.warning(
+          editingId
+            ? "Invoice updated, but the audit log couldn't be recorded."
+            : "Invoice issued, but the audit log couldn't be recorded.",
+        );
+      }
     } catch (err) {
       console.error(err);
       toast.error("Couldn't save the invoice. Please try again.");
@@ -267,7 +275,7 @@ export function ProjectInvoices() {
     if (!admin) return;
     try {
       await deleteDoc(doc(db, COLLECTIONS.projectInvoices, invoice.id));
-      await writeAuditLog({
+      const auditOk = await writeAuditLog({
         actorUid: admin.uid,
         actorEmail: admin.email,
         action: "invoice.delete",
@@ -275,7 +283,11 @@ export function ProjectInvoices() {
         targetId: invoice.id,
         metadata: { clientEmail: invoice.clientEmail, number: invoice.number },
       });
-      toast.success("Invoice removed.");
+      if (auditOk) {
+        toast.success("Invoice removed.");
+      } else {
+        toast.warning("Invoice removed, but the audit log couldn't be recorded.");
+      }
     } catch (err) {
       console.error(err);
       toast.error("Couldn't remove the invoice. Please try again.");
