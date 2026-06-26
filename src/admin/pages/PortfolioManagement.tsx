@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
-import { Images, FolderGit2, EyeOff, Eye, Plus, Pencil, Trash2 } from "lucide-react";
+import {
+  Images,
+  FolderGit2,
+  EyeOff,
+  Eye,
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import {
   addDoc,
   deleteDoc,
   doc,
   serverTimestamp,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import { db } from "@/Firebase/firebase";
@@ -241,6 +252,32 @@ export function PortfolioManagement() {
     }
   }
 
+  async function handleMove(item: PortfolioItem, direction: "up" | "down") {
+    if (!admin) return;
+    const items = portfolio.data;
+    const index = items.findIndex((p) => p.id === item.id);
+    if (index === -1) return;
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= items.length) return;
+    const neighbor = items[swapIndex];
+    try {
+      // Swap the two display-order values atomically so the list reorders.
+      const batch = writeBatch(db);
+      batch.update(doc(db, COLLECTIONS.portfolio, item.id), {
+        order: neighbor.order,
+        updatedAt: serverTimestamp(),
+      });
+      batch.update(doc(db, COLLECTIONS.portfolio, neighbor.id), {
+        order: item.order,
+        updatedAt: serverTimestamp(),
+      });
+      await batch.commit();
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't reorder. Please try again.");
+    }
+  }
+
   async function handleDelete(item: PortfolioItem) {
     if (!admin) return;
     try {
@@ -329,7 +366,7 @@ export function PortfolioManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {portfolio.data.map((item) => (
+                {portfolio.data.map((item, index) => (
                   <tr key={item.id} className="align-top">
                     <td className="px-4 py-3">
                       <CoverThumb item={item} />
@@ -359,6 +396,26 @@ export function PortfolioManagement() {
                       <div className="flex items-center justify-end gap-2">
                         {canEdit && (
                           <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => void handleMove(item, "up")}
+                              disabled={index === 0}
+                              aria-label={`Move ${item.title} up`}
+                              title="Move up"
+                            >
+                              <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => void handleMove(item, "down")}
+                              disabled={index === portfolio.data.length - 1}
+                              aria-label={`Move ${item.title} down`}
+                              title="Move down"
+                            >
+                              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="icon"
