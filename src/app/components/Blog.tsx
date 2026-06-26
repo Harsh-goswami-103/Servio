@@ -3,63 +3,7 @@ import { ArrowLeft, Clock, Tag } from "lucide-react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { motion, useReducedMotion } from "motion/react";
-
-const posts = [
-  {
-    slug: "why-your-small-business-needs-a-website",
-    category: "Business",
-    title: "Why Your Small Business Needs a Website in 2025",
-    excerpt:
-      "75% of consumers judge a company's credibility based on its website. Here's why not having one is costing you clients — and how to fix it without breaking the bank.",
-    date: "June 10, 2025",
-    readTime: "5 min read",
-  },
-  {
-    slug: "landing-page-mistakes",
-    category: "Design",
-    title: "7 Landing Page Mistakes That Kill Conversions",
-    excerpt:
-      "A beautiful page that doesn't convert is just art. We reviewed 200+ small-business landing pages and found the same errors over and over. Here's how to avoid them.",
-    date: "May 28, 2025",
-    readTime: "7 min read",
-  },
-  {
-    slug: "page-speed-revenue",
-    category: "Performance",
-    title: "How Page Speed Directly Impacts Your Revenue",
-    excerpt:
-      "Every 1-second delay in load time can cut conversions by 7%. We break down the real numbers and show you exactly how to make your site faster.",
-    date: "May 14, 2025",
-    readTime: "6 min read",
-  },
-  {
-    slug: "seo-basics-small-business",
-    category: "SEO",
-    title: "SEO Basics Every Small Business Owner Should Know",
-    excerpt:
-      "You don't need to hire an agency to rank on Google. These fundamentals — metadata, structured content, and core web vitals — will get you most of the way there.",
-    date: "April 30, 2025",
-    readTime: "8 min read",
-  },
-  {
-    slug: "ecommerce-vs-booking-site",
-    category: "Strategy",
-    title: "E-Commerce vs. Booking Site: Which Do You Need?",
-    excerpt:
-      "They look similar but serve very different purposes. We compare the two options, walk through the costs, and help you pick the right model for your business.",
-    date: "April 15, 2025",
-    readTime: "5 min read",
-  },
-  {
-    slug: "content-that-converts",
-    category: "Copywriting",
-    title: "Writing Website Copy That Actually Converts",
-    excerpt:
-      "Most websites talk about themselves. The best ones talk about the customer. Learn the simple framework we use to write copy that turns visitors into leads.",
-    date: "March 31, 2025",
-    readTime: "6 min read",
-  },
-];
+import { posts } from "../lib/blogData";
 
 const categoryColors: Record<string, string> = {
   Business: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
@@ -123,8 +67,9 @@ export function Blog() {
           className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16"
         >
           {posts.map((post) => (
-            <article
+            <Link
               key={post.slug}
+              to={`/blog/${post.slug}`}
               className="group flex flex-col p-6 rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all duration-200"
             >
               <div className="flex items-center gap-3 mb-4">
@@ -153,7 +98,7 @@ export function Blog() {
                   Read article →
                 </span>
               </div>
-            </article>
+            </Link>
           ))}
         </motion.div>
 

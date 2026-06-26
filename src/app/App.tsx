@@ -47,6 +47,7 @@ const NotificationCenter = lazy(() => import('../dashboard/notifications/Notific
 const NotificationPreferences = lazy(() => import('../dashboard/notifications/NotificationPreferences').then(m => ({ default: m.NotificationPreferences })));
 const About = lazy(() => import('./components/About').then(m => ({ default: m.About })));
 const Blog = lazy(() => import('./components/Blog').then(m => ({ default: m.Blog })));
+const BlogPost = lazy(() => import('./components/BlogPost').then(m => ({ default: m.BlogPost })));
 const Careers = lazy(() => import('./components/Careers').then(m => ({ default: m.Careers })));
 
 const REVEAL_EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
@@ -213,6 +214,7 @@ const router = createBrowserRouter(
       <Route path="/admin/*" element={<AdminApp />} />
       <Route path="/about" element={<About />} />
       <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/careers" element={<Careers />} />
       <Route path="/services/:slug" element={<ServiceDetailPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
