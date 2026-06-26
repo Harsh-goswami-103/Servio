@@ -21,6 +21,7 @@ import { AdminLoading } from "../components/AdminLoading";
 import { COLLECTIONS } from "../lib/collections";
 import { createPinCredential, isValidPin, PIN_LENGTH } from "../lib/pin";
 import { writeAuditLog } from "../lib/audit";
+import { DEV_MOCK_ENABLED } from "../lib/devMock";
 
 /** Masked PIN dot-slots for the setup form. */
 function PinSlots({
@@ -172,12 +173,16 @@ export function PinSetup() {
       // 2. Persist the credential to Firestore FIRST — the PIN MUST be saved
       //    before session access is granted. If this fails, the user is shown
       //    an error and no access is granted.
-      await updateDoc(doc(db, COLLECTIONS.admins, admin.uid), {
-        pinHash: cred.hash,
-        pinSalt: cred.salt,
-        pinIterations: cred.iterations,
-        updatedAt: serverTimestamp(),
-      });
+      if (DEV_MOCK_ENABLED) {
+        console.log("[PinSetup] DEV_MOCK_ENABLED: skipping Firestore write for PIN.");
+      } else {
+        await updateDoc(doc(db, COLLECTIONS.admins, admin.uid), {
+          pinHash: cred.hash,
+          pinSalt: cred.salt,
+          pinIterations: cred.iterations,
+          updatedAt: serverTimestamp(),
+        });
+      }
 
       // 3. Commit session state synchronously so RequirePinSession sees
       //    pinSessionVerified=true before the navigation re-renders the guard.
@@ -189,11 +194,13 @@ export function PinSetup() {
       navigate(destination, { replace: true });
 
       // 5. Audit log is non-critical — fire-and-forget after navigation.
-      void writeAuditLog({
-        actorUid: admin.uid,
-        actorEmail: admin.email,
-        action: "admin.pin_set",
-      });
+      if (!DEV_MOCK_ENABLED) {
+        void writeAuditLog({
+          actorUid: admin.uid,
+          actorEmail: admin.email,
+          action: "admin.pin_set",
+        });
+      }
     } catch (err) {
       console.error("[PinSetup] failed to save PIN", err);
       setError("Could not save PIN. Please try again.");
