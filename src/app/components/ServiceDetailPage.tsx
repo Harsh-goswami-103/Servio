@@ -6,6 +6,7 @@ import { services } from '../data/servicesData';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { SEO } from './SEO';
+import { SmoothLink } from './SmoothLink';
 import { SITE_URL } from '../lib/siteConfig';
 
 function FAQItem({ question, answer, index }: { question: string; answer: string; index: number }) {
@@ -106,13 +107,13 @@ export function ServiceDetailPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: reduce ? 0 : 0.4 }}
             >
-              <Link
-                to="/#services"
+              <SmoothLink
+                to="services"
                 className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors mb-10"
               >
                 <ArrowLeft className="w-4 h-4" />
                 All Services
-              </Link>
+              </SmoothLink>
             </motion.div>
 
             {/* Icon chip */}
@@ -172,12 +173,12 @@ export function ServiceDetailPage() {
                 Get a Free Quote
                 <ArrowRight className="w-4 h-4" />
               </a>
-              <a
-                href="/#services"
+              <SmoothLink
+                to="services"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white/60 dark:bg-slate-900/60 backdrop-blur transition-all duration-200"
               >
                 View All Services
-              </a>
+              </SmoothLink>
             </motion.div>
           </div>
         </section>
@@ -434,12 +435,12 @@ export function ServiceDetailPage() {
                     Get a Free Quote
                     <ArrowRight className="w-4 h-4" />
                   </a>
-                  <Link
-                    to="/#services"
+                  <SmoothLink
+                    to="services"
                     className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white/60 dark:bg-slate-900/60 transition-all duration-200"
                   >
                     Explore Other Services
-                  </Link>
+                  </SmoothLink>
                 </div>
               </div>
             </motion.div>
