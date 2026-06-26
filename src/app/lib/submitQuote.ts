@@ -26,9 +26,8 @@ import { LIMITS, validateFields, hasErrors, type QuoteFormData } from "./quoteVa
  * regardless of how submitQuote is called.
  */
 function sanitize(value: string, maxChars: number): string {
-  return value
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-    .slice(0, maxChars);
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, maxChars);
 }
 
 /**
