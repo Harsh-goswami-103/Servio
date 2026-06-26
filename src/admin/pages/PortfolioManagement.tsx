@@ -254,22 +254,31 @@ export function PortfolioManagement() {
 
   async function handleMove(item: PortfolioItem, direction: "up" | "down") {
     if (!admin) return;
-    const items = portfolio.data;
+    const items = portfolio.data; // already sorted by display order
     const index = items.findIndex((p) => p.id === item.id);
     if (index === -1) return;
     const swapIndex = direction === "up" ? index - 1 : index + 1;
     if (swapIndex < 0 || swapIndex >= items.length) return;
-    const neighbor = items[swapIndex];
+
+    // Reorder the visible array, then assign GAP-FREE sequential orders rather
+    // than swapping raw values. Swapping fails silently when two items share an
+    // order (e.g. legacy docs that default to 0); renumbering by position always
+    // moves the item and self-heals any pre-existing ties.
+    const reordered = [...items];
+    [reordered[index], reordered[swapIndex]] = [
+      reordered[swapIndex],
+      reordered[index],
+    ];
+
     try {
-      // Swap the two display-order values atomically so the list reorders.
       const batch = writeBatch(db);
-      batch.update(doc(db, COLLECTIONS.portfolio, item.id), {
-        order: neighbor.order,
-        updatedAt: serverTimestamp(),
-      });
-      batch.update(doc(db, COLLECTIONS.portfolio, neighbor.id), {
-        order: item.order,
-        updatedAt: serverTimestamp(),
+      reordered.forEach((p, i) => {
+        if (p.order !== i) {
+          batch.update(doc(db, COLLECTIONS.portfolio, p.id), {
+            order: i,
+            updatedAt: serverTimestamp(),
+          });
+        }
       });
       await batch.commit();
     } catch (err) {
