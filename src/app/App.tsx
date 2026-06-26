@@ -21,6 +21,7 @@ import NotFound from "./components/NotFound";
 import { ThemeProvider } from "./hooks/useTheme";
 import { SplashScreen } from "./components/SplashScreen";
 import { AuthProvider } from "../Firebase/AuthContext";
+import { AdminProvider } from "../admin/context/AdminContext";
 import { useAppLoading } from "./hooks/useAppLoading";
 import { ProtectedRoute } from "../dashboard/components/ProtectedRoute";
 
@@ -192,9 +193,11 @@ function RootLayout() {
     <ThemeProvider>
       <ScrollToTop />
       <AuthProvider>
-        <Suspense fallback={<PageSpinner />}>
-          <Outlet />
-        </Suspense>
+        <AdminProvider>
+          <Suspense fallback={<PageSpinner />}>
+            <Outlet />
+          </Suspense>
+        </AdminProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useThrottledScroll } from '../hooks/useThrottledScroll';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../../Firebase/useAuth';
+import { useAdmin } from '../../admin/context/useAdmin';
 import { auth } from '../../Firebase/firebase';
 import { scrollToSectionFromAnyRoute } from '../lib/scrollToSection';
 
@@ -13,6 +14,9 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
+  const { isAdmin } = useAdmin();
+  const dashboardPath = isAdmin ? '/admin/dashboard' : '/dashboard';
+  const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
   const location = useLocation();
   const navigate = useNavigate();
   const reduce = useReducedMotion();
@@ -110,10 +114,10 @@ export function Navbar() {
             {currentUser ? (
               <div className="flex items-center gap-3">
                 <Link
-                  to="/dashboard"
+                  to={dashboardPath}
                   className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all duration-300 font-medium text-sm"
                 >
-                  Dashboard
+                  {dashboardLabel}
                 </Link>
                 <button
                   onClick={handleSignOut}
@@ -203,11 +207,11 @@ export function Navbar() {
               {currentUser ? (
                 <div className="space-y-2">
                   <Link
-                    to="/dashboard"
+                    to={dashboardPath}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block w-full text-center px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all duration-300 font-medium"
                   >
-                    Dashboard
+                    {dashboardLabel}
                   </Link>
                   <button
                     onClick={handleSignOut}
