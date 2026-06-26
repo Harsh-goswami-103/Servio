@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Images, FolderGit2, EyeOff, Plus, Pencil } from "lucide-react";
+import { Images, FolderGit2, EyeOff, Eye, Plus, Pencil, Trash2 } from "lucide-react";
 import {
   addDoc,
+  deleteDoc,
   doc,
   serverTimestamp,
   updateDoc,
@@ -218,6 +219,47 @@ export function PortfolioManagement() {
     }
   }
 
+  async function handleTogglePublish(item: PortfolioItem) {
+    if (!admin) return;
+    try {
+      await updateDoc(doc(db, COLLECTIONS.portfolio, item.id), {
+        published: !item.published,
+        updatedAt: serverTimestamp(),
+      });
+      await writeAuditLog({
+        actorUid: admin.uid,
+        actorEmail: admin.email,
+        action: item.published ? "portfolio.unpublish" : "portfolio.publish",
+        targetType: "portfolio",
+        targetId: item.id,
+        metadata: { title: item.title },
+      });
+      toast.success(item.published ? "Project unpublished." : "Project published.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't update visibility. Please try again.");
+    }
+  }
+
+  async function handleDelete(item: PortfolioItem) {
+    if (!admin) return;
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.portfolio, item.id));
+      await writeAuditLog({
+        actorUid: admin.uid,
+        actorEmail: admin.email,
+        action: "portfolio.delete",
+        targetType: "portfolio",
+        targetId: item.id,
+        metadata: { title: item.title },
+      });
+      toast.success("Project removed.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't remove the project. Please try again.");
+    }
+  }
+
   const addButton = canEdit ? (
     <div className="flex items-center gap-2">
       <Button onClick={openCreate}>
@@ -316,14 +358,41 @@ export function PortfolioManagement() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         {canEdit && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => openEdit(item)}
-                            aria-label={`Edit ${item.title}`}
-                          >
-                            <Pencil className="h-4 w-4" aria-hidden="true" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => void handleTogglePublish(item)}
+                              aria-label={
+                                item.published
+                                  ? `Unpublish ${item.title}`
+                                  : `Publish ${item.title}`
+                              }
+                              title={item.published ? "Unpublish" : "Publish"}
+                            >
+                              {item.published ? (
+                                <EyeOff className="h-4 w-4" aria-hidden="true" />
+                              ) : (
+                                <Eye className="h-4 w-4" aria-hidden="true" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEdit(item)}
+                              aria-label={`Edit ${item.title}`}
+                            >
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => void handleDelete(item)}
+                              aria-label={`Delete ${item.title}`}
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </td>
