@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { ExternalLink } from 'lucide-react';
 
-const portfolioImage3 = "https://images.unsplash.com/photo-1561070791-2526d30994b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwb3J0Zm9saW8lMjBjcmVhdGl2ZSUyMGRlc2lnbnxlbnwxfHx8fDE3ODE3MDI2NjB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
-const portfolioImage4 = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080&auto=format";
 const portfolioImage5 = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080&auto=format";
 const portfolioImage6 = "https://images.unsplash.com/photo-1558655146-9f40138edfeb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080&auto=format";
 
@@ -13,7 +11,7 @@ const projects = [
     title: 'VeritasAI',
     category: 'SaaS',
     industry: 'AI & Cybersecurity',
-    image: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    image: '/portfolio/image2.png',
     tech: ['React', 'Vite', 'FastAPI', 'PyTorch', 'FaceForensics+'],
     url: 'https://veritasai-6e4ac.web.app',
   },
@@ -28,20 +26,20 @@ const projects = [
   },
   {
     id: 3,
-    title: 'Creative Portfolio',
-    category: 'Portfolio',
-    industry: 'Design',
-    image: portfolioImage3,
-    tech: ['React', 'Framer Motion', 'Firebase'],
+    title: 'MediInsight',
+    category: 'SaaS',
+    industry: 'Healthcare',
+    image: '/portfolio/image3.jpeg',
+    tech: ['Kotlin', 'JavaScript', 'Mobile App'],
     url: '',
   },
   {
     id: 4,
-    title: 'CloudSync SaaS',
-    category: 'SaaS',
+    title: 'Velmora',
+    category: 'Business',
     industry: 'Software',
-    image: portfolioImage4,
-    tech: ['React', 'Node.js', 'PostgreSQL'],
+    image: '/portfolio/image4.jpeg',
+    tech: ['React', 'Node.js', 'NoSQL'],
     url: '',
   },
   {
