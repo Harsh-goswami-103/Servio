@@ -39,6 +39,24 @@ const projects = [
     tech: ['React', 'Node.js', 'NoSQL'],
     url: '',
   },
+  {
+    id: 5,
+    title: 'TFG',
+    category: 'E-Commerce',
+    industry: 'Software',
+    image: '/portfolio/image4.jpeg',
+    tech: ['React', 'Node.js', 'NoSQL'],
+    url: '',
+  },
+  {
+    id: 6,
+    title: 'Budgetra',
+    category: 'Business',
+    industry: 'Software',
+    image: '/portfolio/image5.jpeg',
+    tech: ['React', 'Vite', 'TypeScript'],
+    url: 'https://budgetra-28b23.web.app',
+  },
 ];
 
 const categories = ['All', 'Business', 'E-Commerce', 'SaaS'];
