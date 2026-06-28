@@ -74,7 +74,13 @@ export function CloudinaryUploadWidget({ onSuccess, className }: CloudinaryUploa
       variant="secondary" 
       className={className}
       disabled={!isLoaded}
-      onClick={() => widgetRef.current?.open()}
+      onClick={() => {
+        if (!widgetRef.current) {
+          alert("Cloudinary is not initialized. If you just added the API keys to .env, please restart your Vite dev server.");
+          return;
+        }
+        widgetRef.current.open();
+      }}
     >
       <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
       Upload Image
