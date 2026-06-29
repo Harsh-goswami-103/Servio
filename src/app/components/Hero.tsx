@@ -88,7 +88,9 @@ function StatNumber({ to, suffix = '', run }: { to: number; suffix?: string; run
 
 export function Hero() {
   const reduce = useReducedMotion();
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  // Centre (0.5, 0.5) so parallax transforms read zero offset before the first
+  // pointer move — otherwise the mock/cards render shifted on initial paint.
+  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref: mountRef, inView } = useInViewMount<HTMLDivElement>();
 

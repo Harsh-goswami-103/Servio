@@ -70,7 +70,7 @@ export function FAQ() {
                 initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
                 whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: reduce ? 0 : 0.4, delay: index * 0.05 }}
+                transition={{ duration: reduce ? 0 : 0.4, delay: reduce ? 0 : index * 0.05 }}
                 style={
                   isOpen
                     ? ({ "--glass-tint": "var(--saffron)" } as React.CSSProperties)
@@ -122,7 +122,7 @@ export function FAQ() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: reduce ? 0 : 0.5, delay: 0.3 }}
+          transition={{ duration: reduce ? 0 : 0.5, delay: reduce ? 0 : 0.3 }}
           className="glass mt-10 rounded-2xl p-6 text-center"
         >
           <p className="text-muted-foreground">

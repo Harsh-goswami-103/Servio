@@ -266,9 +266,11 @@ function MarqueeRow({
 
 export function Testimonials() {
   const reduce = useReducedMotion();
-  const featured = testimonials[0];
-  const firstRow = testimonials.slice(0, 5);
-  const secondRow = testimonials.slice(5);
+  // Spotlight the first testimonial; the marquee rows use the rest so the
+  // featured quote never renders twice.
+  const [featured, ...marquee] = testimonials;
+  const firstRow = marquee.slice(0, 5);
+  const secondRow = marquee.slice(5);
 
   return (
     <section

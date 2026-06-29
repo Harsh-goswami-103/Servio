@@ -17,11 +17,13 @@ export function useMagnetic<T extends HTMLElement = HTMLButtonElement>(strength 
     const r = el.getBoundingClientRect();
     const x = (e.clientX - (r.left + r.width / 2)) * strength;
     const y = (e.clientY - (r.top + r.height / 2)) * strength;
-    el.style.transform = `translate(${x}px, ${y}px)`;
+    // Use `translate` (not `transform`) so the magnetic offset composes with
+    // class-based transforms like `active:scale-95` instead of overwriting them.
+    el.style.translate = `${x}px ${y}px`;
   };
 
   const onPointerLeave = () => {
-    if (ref.current) ref.current.style.transform = "";
+    if (ref.current) ref.current.style.translate = "";
   };
 
   return { ref, onPointerMove, onPointerLeave };

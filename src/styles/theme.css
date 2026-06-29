@@ -73,6 +73,15 @@
 .animate-mandala { animation: mandala-spin 28s linear infinite; transform-origin: 50% 50%; }
 .animate-mandala-rev { animation: mandala-spin-rev 36s linear infinite; transform-origin: 50% 50%; }
 
+/* ── Marquee rail with hover/focus pause (TrustedBy) ──────────────────────── */
+@keyframes marquee-x { to { transform: translateX(-50%); } }
+.marquee-rail { animation: marquee-x 32s linear infinite; }
+.marquee-pause:hover .marquee-rail,
+.marquee-pause:focus-within .marquee-rail { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-rail { animation: none; }
+}
+
 
 
 :root {
@@ -297,7 +306,7 @@
 
   /* ── Type system ──────────────────────────────────────────────────────── */
   --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-display: 'Fraunces', 'Plus Jakarta Sans', Georgia, serif;
+  --font-display: 'Fraunces', 'Plus Jakarta Sans', georgia, serif;
   --font-indic: 'Anek Devanagari', var(--font-sans);
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 

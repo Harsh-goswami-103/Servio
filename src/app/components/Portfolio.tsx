@@ -28,10 +28,20 @@ function isCoarsePointer() {
   return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 }
 
+/** Only allow http(s) destinations — guards against javascript:/data: hrefs. */
+function isSafeHttpUrl(u: string): boolean {
+  try {
+    const proto = new URL(u).protocol;
+    return proto === "http:" || proto === "https:";
+  } catch {
+    return false;
+  }
+}
+
 /** A magnetic "View Project" affordance that keeps real anchor semantics. */
 function ViewProjectLink({ url, label }: { url: string; label: string }) {
   const mag = useMagnetic<HTMLAnchorElement>(0.35);
-  if (!url) {
+  if (!url || !isSafeHttpUrl(url)) {
     return (
       <span className="inline-flex items-center gap-2 text-sm font-medium opacity-60">
         Coming Soon

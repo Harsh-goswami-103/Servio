@@ -73,26 +73,29 @@ export function TrustedBy() {
             ) : (
               // Two identical rows; translating the track by exactly one row
               // width (-50%) loops seamlessly. Trailing gap == inter-item gap.
-              <motion.div
-                className="flex w-max"
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
+              <div
+                tabIndex={0}
+                role="group"
+                aria-label="Tools and frameworks we build with — hover or focus to pause"
+                className="marquee-pause rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
               >
-                <ul className="flex shrink-0 items-center gap-12 pr-12">
-                  {tools.map((t) => (
-                    <li key={t}>
-                      <ToolWord label={t} />
-                    </li>
-                  ))}
-                </ul>
-                <ul aria-hidden className="flex shrink-0 items-center gap-12 pr-12">
-                  {tools.map((t) => (
-                    <li key={`dup-${t}`}>
-                      <ToolWord label={t} />
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
+                <div className="marquee-rail flex w-max">
+                  <ul className="flex shrink-0 items-center gap-12 pr-12">
+                    {tools.map((t) => (
+                      <li key={t}>
+                        <ToolWord label={t} />
+                      </li>
+                    ))}
+                  </ul>
+                  <ul aria-hidden className="flex shrink-0 items-center gap-12 pr-12">
+                    {tools.map((t) => (
+                      <li key={`dup-${t}`}>
+                        <ToolWord label={t} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             )}
           </div>
 

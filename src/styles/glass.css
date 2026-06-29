@@ -32,7 +32,7 @@
 
   /* Tiers — escalate only where earned; never grid-repeat .glass-thick. */
   .glass-thin { --glass-blur: 8px; }
-  .glass-strong { background: var(--glass-bg-strong); }
+  .glass-strong { background: color-mix(in oklch, var(--glass-tint) 8%, var(--glass-bg-strong)); }
   .glass-thick { --glass-blur: 28px; }
 
   /* (3) Zari rim-light — masked 1px gradient: bright top-left → gold bottom-right. */

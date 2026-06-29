@@ -12,13 +12,26 @@ export interface MagneticButtonProps extends ButtonHTMLAttributes<HTMLButtonElem
  * brand gradient; pass `className` to override. Touch / reduced-motion users get
  * a normal button (the magnetic effect no-ops).
  */
-export function MagneticButton({ className, strength = 0.3, children, ...rest }: MagneticButtonProps) {
-  const { ref, onPointerMove, onPointerLeave } = useMagnetic<HTMLButtonElement>(strength);
+export function MagneticButton({
+  className,
+  strength = 0.3,
+  children,
+  onPointerMove,
+  onPointerLeave,
+  ...rest
+}: MagneticButtonProps) {
+  const { ref, onPointerMove: magMove, onPointerLeave: magLeave } = useMagnetic<HTMLButtonElement>(strength);
   return (
     <button
       ref={ref}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
+      onPointerMove={(e) => {
+        magMove(e);
+        onPointerMove?.(e);
+      }}
+      onPointerLeave={(e) => {
+        magLeave();
+        onPointerLeave?.(e);
+      }}
       className={cn(
         "relative inline-flex items-center justify-center rounded-full px-6 py-3 font-medium text-white",
         "transition-[transform,box-shadow] duration-300 ease-out will-change-transform active:scale-95",

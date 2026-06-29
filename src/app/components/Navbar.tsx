@@ -124,19 +124,42 @@ export function Navbar() {
     return () => observer.disconnect();
   }, [onLanding]);
 
-  // Mobile menu: focus the first item on open, close (and restore focus) on Escape.
+  // Mobile menu: trap focus while open, close (restoring focus to the toggle)
+  // on Escape, and focus the first item on open.
   useEffect(() => {
     if (!isMobileMenuOpen) return;
+    const menu = mobileMenuRef.current;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsMobileMenuOpen(false);
         menuButtonRef.current?.focus();
+        return;
+      }
+      // Keep Tab focus inside the open menu so it can't reach the obscured page.
+      if (e.key === 'Tab' && menu) {
+        const f = menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+        if (f.length === 0) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener('keydown', onKey);
-    mobileMenuRef.current?.querySelector<HTMLElement>('a, button')?.focus();
+    menu?.querySelector<HTMLElement>('a, button')?.focus();
     return () => document.removeEventListener('keydown', onKey);
   }, [isMobileMenuOpen]);
+
+  // Close the mobile menu and return focus to the toggle (used by close paths).
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    menuButtonRef.current?.focus();
+  };
 
   const handleSignOut = async () => {
     try {
@@ -316,7 +339,7 @@ export function Navbar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: reduce ? 0 : 0.2 }}
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileMenu}
               className="pointer-events-auto fixed inset-0 -z-10 cursor-default bg-black/20 backdrop-blur-[1px] md:hidden"
             />
             <motion.div
@@ -359,7 +382,7 @@ export function Navbar() {
                     ) : (
                       <Link
                         to={dashboardPath}
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={closeMobileMenu}
                         className={cn(PRIMARY_CTA, 'w-full justify-center')}
                       >
                         {dashboardLabel}
@@ -375,7 +398,7 @@ export function Navbar() {
                 ) : (
                   <Link
                     to="/signin"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={closeMobileMenu}
                     className={cn(PRIMARY_CTA, 'w-full justify-center')}
                   >
                     Sign In

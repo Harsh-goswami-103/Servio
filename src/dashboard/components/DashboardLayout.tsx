@@ -236,6 +236,7 @@ export function DashboardLayout() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.15 }}
                 className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
                 onClick={() => setSidebarOpen(false)}
               />
