@@ -54,6 +54,7 @@ import { AuthProvider } from "../Firebase/AuthContext";
 import { AdminProvider } from "../admin/context/AdminContext";
 import { useAppLoading } from "./hooks/useAppLoading";
 import { ProtectedRoute } from "../dashboard/components/ProtectedRoute";
+import { Toaster } from "./components/ui/sonner";
 
 // Route-level lazy chunks — each becomes its own JS file, downloaded only
 // when the user first navigates to that route.
@@ -236,6 +237,7 @@ function RootLayout() {
           <Suspense fallback={<PageSpinner />}>
             <AnimatedOutlet />
           </Suspense>
+          <Toaster richColors position="top-right" />
         </AdminProvider>
       </AuthProvider>
     </ThemeProvider>
