@@ -6,12 +6,12 @@ import { Reveal } from "./motion/Reveal";
 import { Jali } from "./motifs";
 
 const services = [
-  { label: "Landing Pages",        slug: "landing-pages" },
-  { label: "Business Websites",    slug: "business-websites" },
-  { label: "Portfolio Websites",   slug: "portfolio-websites" },
-  { label: "E-Commerce Stores",    slug: "e-commerce-stores" },
-  { label: "Custom Web Apps",      slug: "custom-web-applications" },
-  { label: "Website Maintenance",  slug: "website-maintenance" },
+  { label: "Landing Pages", slug: "landing-pages" },
+  { label: "Business Websites", slug: "business-websites" },
+  { label: "Portfolio Websites", slug: "portfolio-websites" },
+  { label: "E-Commerce Stores", slug: "e-commerce-stores" },
+  { label: "Custom Web Apps", slug: "custom-web-applications" },
+  { label: "Website Maintenance", slug: "website-maintenance" },
 ];
 
 const company = [
@@ -23,10 +23,10 @@ const company = [
 ];
 
 const socials = [
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Instagram, href: "#", label: "Instagram" },
+  { icon: Twitter, href: "https://x.com/TM_Servio", label: "Twitter" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/servio-0/", label: "LinkedIn" },
+  { icon: Github, href: "", label: "GitHub" },
+  { icon: Instagram, href: "https://www.instagram.com/__servio?utm_source=qr&igsh=MTFnejZxc3NiODFjOQ==", label: "Instagram" },
 ];
 
 export function Footer() {
