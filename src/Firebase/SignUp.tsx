@@ -74,7 +74,7 @@ function StrengthMeter({ password, strength, score, visible }: StrengthMeterProp
                 <motion.div
                   key={i}
                   className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                    i < score ? barColor : 'bg-gray-200 dark:bg-slate-700'
+                    i < score ? barColor : 'bg-muted'
                   }`}
                   initial={{ scaleX: 0, originX: 0 }}
                   animate={{ scaleX: 1 }}
@@ -89,7 +89,7 @@ function StrengthMeter({ password, strength, score, visible }: StrengthMeterProp
                 {password.length > 0 ? strength : ''}
               </span>
               {password.length > 0 && (
-                <span className="text-xs text-gray-400 dark:text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {score}/{totalBars} criteria
                 </span>
               )}
@@ -123,7 +123,7 @@ function RequirementsChecklist({ password, visible }: RequirementsChecklistProps
           className="overflow-hidden"
         >
           <ul
-            className="mt-3 space-y-1.5 p-3 rounded-lg bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700"
+            className="mt-3 space-y-1.5 p-3 rounded-lg bg-muted/40 border border-border"
             aria-label="Password requirements checklist"
             role="list"
           >
@@ -149,7 +149,7 @@ function RequirementsChecklist({ password, visible }: RequirementsChecklistProps
                     />
                   ) : (
                     <X
-                      className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 flex-shrink-0"
+                      className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0"
                       strokeWidth={2.5}
                     />
                   )}
@@ -158,7 +158,7 @@ function RequirementsChecklist({ password, visible }: RequirementsChecklistProps
                   className={`transition-colors duration-200 ${
                     req.met
                       ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-gray-500 dark:text-gray-400'
+                      : 'text-muted-foreground'
                   }`}
                 >
                   {req.label}
@@ -193,7 +193,7 @@ function WeakPasswordAlert({ visible, missingLabels }: WeakPasswordAlertProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
-          className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/25 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs"
+          className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs"
         >
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div>
@@ -301,7 +301,7 @@ export function SignUp() {
       <Link
         to="/"
         aria-label="Back to home"
-        className="absolute top-4 left-4 z-10 inline-flex items-center justify-center rounded-full p-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+        className="absolute top-4 left-4 z-10 inline-flex items-center justify-center rounded-full p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
       >
         <Home className="w-6 h-6" aria-hidden="true" />
       </Link>
@@ -452,10 +452,10 @@ export function SignUp() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-              className={`w-full flex justify-center py-2.5 px-4 rounded-md shadow-lg text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 ${
+              className={`w-full flex justify-center py-2.5 px-4 rounded-full shadow-elev-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-all duration-300 ${
                 passwordTouched && strength === 'Weak'
-                  ? 'bg-gray-400 dark:bg-slate-600 shadow-none cursor-not-allowed opacity-70'
-                  : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-[position:right_center] shadow-indigo-500/30'
+                  ? 'bg-muted text-muted-foreground shadow-none cursor-not-allowed opacity-70'
+                  : 'bg-grad-brand text-white hover:[box-shadow:0_0_28px_-4px_var(--gold)]'
               }`}
             >
               Sign Up
@@ -466,10 +466,10 @@ export function SignUp() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                <div className="w-full border-t border-gray-300 dark:border-slate-600" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">
+                <span className="px-2 bg-card text-muted-foreground">
                   Or sign up with
                 </span>
               </div>
@@ -483,7 +483,7 @@ export function SignUp() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-sm font-medium text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 border border-border rounded-full shadow-sm bg-card text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors"
               >
                 <GoogleLogo />
                 Sign up with Google
@@ -491,11 +491,11 @@ export function SignUp() {
             </div>
           </div>
 
-          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-8 text-center text-sm text-muted-foreground">
             Already a member?{' '}
             <Link
               to="/signin"
-              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="font-medium text-primary hover:text-primary/80"
             >
               Sign in
             </Link>
