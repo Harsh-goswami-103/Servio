@@ -326,7 +326,7 @@ export function SignUp() {
           {error && (
             <p
               role="alert"
-              className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 p-3 rounded-lg mb-4 text-sm"
+              className="bg-destructive/10 text-destructive border border-destructive/20 p-3 rounded-lg mb-4 text-sm"
             >
               {error}
             </p>
@@ -342,7 +342,7 @@ export function SignUp() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                className="block text-sm font-medium text-foreground"
               >
                 Email Address
               </label>
@@ -355,7 +355,7 @@ export function SignUp() {
                 aria-required="true"
                 value={email}
                 onChange={(e) => { markDirty(); setEmail(e.target.value); }}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition"
+                className="mt-1 block w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/60 focus:border-primary sm:text-sm transition"
                 placeholder="you@example.com"
               />
             </div>
@@ -364,7 +364,7 @@ export function SignUp() {
             <div>
               <label
                 htmlFor={passwordId}
-                className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                className="block text-sm font-medium text-foreground"
               >
                 Password
               </label>
@@ -388,14 +388,14 @@ export function SignUp() {
                   }}
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => setPasswordFocused(false)}
-                  className={`block w-full pr-10 px-3 py-2 bg-white dark:bg-slate-800 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm transition ${
+                  className={`block w-full pr-10 px-3 py-2 bg-input-background border rounded-md shadow-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/60 sm:text-sm transition ${
                     weakAttempt
                       ? 'border-red-400 dark:border-red-600 focus:border-red-500'
                       : passwordTouched && strength === 'Strong'
                       ? 'border-emerald-400 dark:border-emerald-600 focus:border-emerald-500'
                       : passwordTouched && strength === 'Medium'
                       ? 'border-amber-400 dark:border-amber-600 focus:border-amber-500'
-                      : 'border-gray-300 dark:border-slate-600 focus:border-indigo-500'
+                      : 'border-border focus:border-primary'
                   }`}
                   placeholder="Create a strong password"
                 />
@@ -405,7 +405,7 @@ export function SignUp() {
                   type="button"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-r-md"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-r-md"
                   tabIndex={0}
                 >
                   {showPassword ? (
