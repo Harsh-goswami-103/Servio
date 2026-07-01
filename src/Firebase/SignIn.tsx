@@ -62,7 +62,7 @@ export function SignIn() {
             <Link
                 to="/"
                 aria-label="Back to home"
-                className="absolute top-4 left-4 z-10 inline-flex items-center justify-center rounded-full p-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                className="absolute top-4 left-4 z-10 inline-flex items-center justify-center rounded-full p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
             >
                 <Home className="w-6 h-6" aria-hidden="true" />
             </Link>
@@ -129,7 +129,7 @@ export function SignIn() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.96 }}
                             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                            className="w-full flex justify-center py-2.5 px-4 rounded-md shadow-lg shadow-indigo-500/30 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-[position:right_center] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-[background-position] duration-500"
+                            className="w-full flex justify-center py-2.5 px-4 rounded-full shadow-elev-3 text-sm font-medium text-white bg-grad-brand hover:[box-shadow:0_0_28px_-4px_var(--gold)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-[box-shadow,transform] duration-300"
                         >
                             Sign In
                         </motion.button>
@@ -137,10 +137,10 @@ export function SignIn() {
                     <div className="mt-6">
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                <div className="w-full border-t border-gray-300 dark:border-slate-600" />
+                                <div className="w-full border-t border-border" />
                             </div>
                             <div className="relative flex justify-center text-sm">
-                                <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">Or continue with</span>
+                                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
                             </div>
                         </div>
                         <div className="mt-6">
@@ -150,16 +150,16 @@ export function SignIn() {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.96 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-sm font-medium text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 border border-border rounded-full shadow-sm bg-card text-sm font-medium text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors"
                             >
                                 <GoogleLogo />
                                 Sign in with Google
                             </motion.button>
                         </div>
                     </div>
-                    <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+                    <p className="mt-8 text-center text-sm text-muted-foreground">
                         Not a member?{' '}
-                        <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                        <Link to="/signup" className="font-medium text-primary hover:text-primary/80">
                             Sign up now
                         </Link>
                     </p>
