@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from './firebase';
 import { Home } from 'lucide-react';
+import { Aurora } from '@/app/components/Aurora';
 
 function GoogleLogo() {
     return (
@@ -53,20 +54,9 @@ export function SignIn() {
     };
 
     return (
-        <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-white via-indigo-50/40 to-white dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-950 px-4">
-            {/* Animated gradient background blobs */}
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-                <motion.div
-                    className="absolute -top-32 -left-24 w-[560px] h-[560px] rounded-full bg-gradient-to-br from-indigo-400/40 to-purple-400/30 dark:from-indigo-500/20 dark:to-purple-500/15 blur-3xl"
-                    animate={{ y: [0, 30, 0], x: [0, 20, 0] }}
-                    transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                    className="absolute bottom-[-160px] right-[-120px] w-[520px] h-[520px] rounded-full bg-gradient-to-br from-cyan-400/35 to-teal-300/25 dark:from-cyan-500/15 dark:to-teal-400/10 blur-3xl"
-                    animate={{ y: [0, -30, 0], x: [0, -20, 0] }}
-                    transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-                />
-            </div>
+        <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background px-4">
+            {/* Warm ambient glow — the same drifting aurora the landing page uses */}
+            <Aurora intensity={0.6} />
 
             <Link
                 to="/"
