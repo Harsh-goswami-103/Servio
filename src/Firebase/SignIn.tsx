@@ -129,7 +129,7 @@ export function SignIn() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.96 }}
                             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                            className="w-full flex justify-center py-2.5 px-4 rounded-full shadow-elev-3 text-sm font-medium text-white bg-grad-brand hover:[box-shadow:0_0_28px_-4px_var(--gold)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-[box-shadow,transform] duration-300"
+                            className="w-full flex justify-center py-2.5 px-4 rounded-full shadow-elev-3 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 hover:[box-shadow:0_0_28px_-4px_var(--gold)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-[box-shadow,transform] duration-300"
                         >
                             Sign In
                         </motion.button>

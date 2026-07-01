@@ -455,7 +455,7 @@ export function SignUp() {
               className={`w-full flex justify-center py-2.5 px-4 rounded-full shadow-elev-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-all duration-300 ${
                 passwordTouched && strength === 'Weak'
                   ? 'bg-muted text-muted-foreground shadow-none cursor-not-allowed opacity-70'
-                  : 'bg-grad-brand text-white hover:[box-shadow:0_0_28px_-4px_var(--gold)]'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90 hover:[box-shadow:0_0_28px_-4px_var(--gold)]'
               }`}
             >
               Sign Up
