@@ -193,7 +193,7 @@ function WeakPasswordAlert({ visible, missingLabels }: WeakPasswordAlertProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
-          className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs"
+          className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive dark:text-red-300 text-xs"
         >
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div>
@@ -326,7 +326,7 @@ export function SignUp() {
           {error && (
             <p
               role="alert"
-              className="bg-destructive/10 text-destructive border border-destructive/20 p-3 rounded-lg mb-4 text-sm"
+              className="bg-destructive/10 text-destructive dark:text-red-300 border border-destructive/20 p-3 rounded-lg mb-4 text-sm"
             >
               {error}
             </p>

@@ -83,7 +83,7 @@ export function SignIn() {
                         Welcome back to Servio.
                     </p>
                     {error && (
-                        <p role="alert" className="bg-destructive/10 text-destructive border border-destructive/20 p-3 rounded-lg mb-4 text-sm">
+                        <p role="alert" className="bg-destructive/10 text-destructive dark:text-red-300 border border-destructive/20 p-3 rounded-lg mb-4 text-sm">
                             {error}
                         </p>
                     )}
