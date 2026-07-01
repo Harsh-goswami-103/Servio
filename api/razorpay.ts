@@ -152,6 +152,43 @@ export default async function handler(
         return res.status(400).json({ error: "Invalid signature" });
       }
 
+      // The signature only binds order_id|payment_id — NOT the amount. Fetch the
+      // payment from Razorpay and treat its captured amount as authoritative, so a
+      // tampered request body can't overstate what the client actually paid.
+      let authenticatedAmount: number;
+      try {
+        const rzpPayment = await razorpay.payments.fetch(razorpay_payment_id);
+
+        if (rzpPayment.order_id !== razorpay_order_id) {
+          return res.status(400).json({ error: "Payment does not match order" });
+        }
+        // Require `captured`, not `authorized`: an authorized payment only
+        // reserves the funds (they can still auto-refund if never captured), so
+        // recording it as "completed" would overstate the paid balance.
+        if (rzpPayment.status !== "captured") {
+          return res.status(400).json({ error: "Payment has not been captured" });
+        }
+
+        const paidPaisa = Number(rzpPayment.amount);
+        if (!Number.isFinite(paidPaisa) || paidPaisa <= 0) {
+          return res
+            .status(502)
+            .json({ error: "Could not verify the payment amount with Razorpay" });
+        }
+        // Reject a request whose amount doesn't match the captured payment.
+        if (Math.round(amount * 100) !== Math.round(paidPaisa)) {
+          return res
+            .status(400)
+            .json({ error: "Amount does not match the captured payment" });
+        }
+        authenticatedAmount = paidPaisa / 100;
+      } catch (err) {
+        console.error("Failed to fetch Razorpay payment:", err);
+        return res
+          .status(502)
+          .json({ error: "Could not verify the payment with Razorpay" });
+      }
+
       // Record successful payment in Firestore
       const normalizedEmail = clientEmail.trim().toLowerCase();
       const billingRef = db.collection("projectBilling").doc(normalizedEmail);
@@ -167,11 +204,15 @@ export default async function handler(
       let payments: Record<string, unknown>[] = data?.payments || [];
 
       if (pendingPaymentId) {
-        // Update the existing pending payment
+        // Update the existing pending payment with the authenticated amount, so
+        // the completion path is as authoritative as the ad-hoc append path.
+        let matchedPendingPayment = false;
         payments = payments.map((p) => {
           if (p.id === pendingPaymentId) {
+            matchedPendingPayment = true;
             return {
               ...p,
+              amount: authenticatedAmount,
               status: "completed",
               method: "Razorpay",
               reference: razorpay_payment_id,
@@ -180,11 +221,14 @@ export default async function handler(
           }
           return p;
         });
+        if (!matchedPendingPayment) {
+          return res.status(404).json({ error: "Pending payment not found" });
+        }
       } else {
         // Append a new payment
         const newPayment = {
           id: razorpay_payment_id, // Use razorpay payment id for new ad-hoc payments
-          amount: Number(amount),
+          amount: authenticatedAmount,
           method: "Razorpay",
           reference: razorpay_payment_id,
           status: "completed",
