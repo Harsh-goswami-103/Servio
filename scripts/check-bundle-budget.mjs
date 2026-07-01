@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { gzipSync } from 'node:zlib'
 
 const DIST_DIR = path.resolve('dist')
+const MANIFEST_PATH = path.join(DIST_DIR, '.vite', 'manifest.json')
 const REPORT_PATH = path.join(DIST_DIR, 'bundle-report.md')
 
 const KIB = 1024
@@ -60,19 +61,57 @@ function sumAssets(assets) {
   )
 }
 
-function getInitialAssetPaths() {
-  const indexPath = path.join(DIST_DIR, 'index.html')
+function addAssetPath(assetPaths, assetPath) {
+  if (/\.(?:js|css)$/.test(assetPath)) {
+    assetPaths.add(assetPath)
+  }
+}
 
-  if (!existsSync(indexPath)) {
-    return new Set()
+function addManifestChunkAssets(manifest, chunkKey, assetPaths, seenChunkKeys) {
+  if (seenChunkKeys.has(chunkKey)) {
+    return
   }
 
-  const html = readFileSync(indexPath, 'utf8')
-  const assetPaths = html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)
+  seenChunkKeys.add(chunkKey)
 
-  return new Set(
-    [...assetPaths].map((match) => match[1].replace(/^\//, '')),
-  )
+  const chunk = manifest[chunkKey]
+
+  if (!chunk) {
+    return
+  }
+
+  addAssetPath(assetPaths, chunk.file)
+
+  for (const cssPath of chunk.css ?? []) {
+    addAssetPath(assetPaths, cssPath)
+  }
+
+  for (const assetPath of chunk.assets ?? []) {
+    addAssetPath(assetPaths, assetPath)
+  }
+
+  for (const importKey of chunk.imports ?? []) {
+    addManifestChunkAssets(manifest, importKey, assetPaths, seenChunkKeys)
+  }
+}
+
+function getInitialAssetPaths() {
+  if (!existsSync(MANIFEST_PATH)) {
+    console.error('dist/.vite/manifest.json does not exist. Run `npm run build` before `npm run bundle:budget`.')
+    process.exit(1)
+  }
+
+  const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'))
+  const assetPaths = new Set()
+  const seenChunkKeys = new Set()
+
+  for (const [chunkKey, chunk] of Object.entries(manifest)) {
+    if (chunk.isEntry) {
+      addManifestChunkAssets(manifest, chunkKey, assetPaths, seenChunkKeys)
+    }
+  }
+
+  return assetPaths
 }
 
 function createBudgetResult(name, actualBytes, limitBytes) {
@@ -96,8 +135,6 @@ if (!existsSync(DIST_DIR)) {
   console.error('dist/ does not exist. Run `npm run build` before `npm run bundle:budget`.')
   process.exit(1)
 }
-
-mkdirSync(DIST_DIR, { recursive: true })
 
 const allAssets = walkFiles(DIST_DIR)
   .filter((filePath) => /\.(?:js|css)$/.test(filePath))
