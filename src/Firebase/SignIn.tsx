@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 
 import { auth } from './firebase';
 import { Home } from 'lucide-react';
 import { Aurora } from '@/app/components/Aurora';
+import { GlassPanel } from '@/app/components/GlassPanel';
 
 function GoogleLogo() {
     return (
@@ -70,15 +71,15 @@ export function SignIn() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="relative max-w-md w-full p-px rounded-2xl bg-gradient-to-br from-indigo-500/60 via-purple-500/40 to-cyan-400/50 shadow-xl shadow-indigo-500/10"
+                className="relative z-10 max-w-md w-full"
             >
-                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-8 rounded-2xl">
-                    <h1 className="text-3xl font-bold text-center mb-2">
-                        <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent">
+                <GlassPanel tier="strong" className="p-8 rounded-2xl shadow-elev-3">
+                    <h1 className="font-display text-3xl font-bold text-center mb-2">
+                        <span className="text-gradient-brand">
                             Sign In
                         </span>
                     </h1>
-                    <p className="text-center text-gray-600 dark:text-gray-300 mb-8">
+                    <p className="text-center text-muted-foreground mb-8">
                         Welcome back to Servio.
                     </p>
                     {error && (
@@ -162,7 +163,7 @@ export function SignIn() {
                             Sign up now
                         </Link>
                     </p>
-                </div>
+                </GlassPanel>
             </motion.div>
         </div>
     );
